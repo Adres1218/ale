@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MegaSohbet - Supabase Canlı Sohbet Odası</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950: '#020617' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.3); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+  </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans flex flex-col overflow-hidden">
+
+  <div id="login-screen" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900 z-50">
+    <div class="w-full max-w-md bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
+      <div class="text-center mb-6">
+        <span class="inline-block p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 mb-3 border border-indigo-500/20">
+          <i data-lucide="sparkles" class="w-8 h-8 animate-pulse"></i>
+        </span>
+        <h2 class="text-2xl font-bold text-white tracking-tight">Sohbete Katılın</h2>
+        <p class="text-slate-400 text-sm mt-1">Kendinize bir takma ad ve şirin bir avatar seçin.</p>
+      </div>
+
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Kullanıcı Adı / Rumuz</label>
+          <div class="relative">
+            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5"></i>
+            <input type="text" id="username-input" maxlength="15" placeholder="Örn: Rüzgar_12" class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl outline-none text-slate-100 transition-all focus:ring-2 focus:ring-indigo-500/20" required />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Avatarını Seç</label>
+          <div id="avatar-grid" class="grid grid-cols-4 gap-3"></div>
+        </div>
+
+        <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <div class="flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+            <span>Konum: <strong id="geo-city" class="text-slate-200">Yükleniyor...</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="globe" class="w-4 h-4 text-indigo-400"></i>
+            <span>Güvenli IP: <strong id="geo-ip" class="text-slate-200">xx.xx.xx.xx</strong></span>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+          Giriş Yap ve Sohbet et
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-screen" class="hidden flex-1 flex flex-col overflow-hidden">
+    <header class="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 shadow-md z-10">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-gradient-to-tr from-indigo-500 to-violet-500 rounded-xl text-white shadow-lg">
+          <i data-lucide="message-square" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">MegaSohbet</h1>
+          <div class="flex items-center gap-2 mt-0.5">
+            <p class="text-xs text-indigo-400 flex items-center gap-1 leading-none">
+              <i data-lucide="circle" class="w-2 h-2 fill-emerald-500 text-emerald-500 animate-pulse"></i>
+              <span id="active-count">0</span> kişi aktif
+            </p>
+            <span id="connection-badge" class="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-900/50 leading-none">
+              Bağlantı Kontrol Ediliyor...
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 md:gap-4">
+        <button id="btn-qr" class="flex items-center gap-2 px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 rounded-lg text-sm transition-all shadow-inner">
+          <i data-lucide="qr-code" class="w-4 h-4 text-indigo-400"></i>
+          <span class="hidden sm:inline font-medium">Odayı Paylaş / QR</span>
+        </button>
+        <button id="btn-sound" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="volume-2" id="sound-icon" class="w-5 h-5"></i>
+        </button>
+        <button id="btn-mobile-users" class="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i data-lucide="users" class="w-5 h-5"></i>
+        </button>
+        <div class="hidden sm:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/50">
+          <span id="header-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-inner">🦊</span>
+          <div class="text-left">
+            <p class="text-xs text-slate-400 font-medium leading-none">Profil</p>
+            <p id="header-username" class="text-sm font-semibold text-slate-200 leading-tight">Yükleniyor...</p>
+          </div>
+        </div>
+        <button id="btn-logout" class="flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent rounded-lg transition-all">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span class="hidden md:inline">Değiştir</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+      <aside id="user-sidebar" class="w-80 bg-slate-900/60 border-r border-slate-800 flex flex-col transition-all z-20 hidden md:flex absolute inset-y-0 left-0 w-full md:relative md:w-80 bg-slate-950 md:bg-slate-900/60">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+          <div class="flex items-center gap-2 text-indigo-400">
+            <i data-lucide="hash" class="w-5 h-5"></i>
+            <span class="font-bold text-slate-200">genel-sohbet</span>
+          </div>
+          <button id="btn-close-sidebar" class="md:hidden text-xs text-indigo-400 font-semibold px-2 py-1 bg-slate-800 rounded">Kapat</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span>Aktif Kullanıcılar (<span id="sidebar-user-count">0</span>)</span>
+            <i data-lucide="circle" class="w-2.5 h-2.5 fill-emerald-500 text-emerald-500 animate-ping"></i>
+          </div>
+          <div id="online-users-list" class="space-y-2"></div>
+        </div>
+        <div class="p-4 border-t border-slate-800 bg-slate-900/20 text-xs text-slate-400 space-y-2">
+          <p class="font-medium text-indigo-400 flex items-center gap-1">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i> Bağlantın Güvende:
+          </p>
+          <p class="text-[11px] leading-relaxed">
+            Konumun <strong id="sidebar-geo-city" class="text-slate-300">Yükleniyor...</strong>, IP adresin <strong id="sidebar-geo-ip" class="text-slate-300">xx.xx.xx.xx</strong> olarak maskelenerek paylaşıldı.
+          </p>
+        </div>
+      </aside>
+
+      <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden relative">
+        <div id="messages-container" class="flex-1 overflow-y-auto px-4 py-6 md:p-6 space-y-4 custom-scrollbar"></div>
+
+        <div class="px-4 pt-2 border-t border-slate-900 bg-slate-900/20">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
+            <span class="text-xs text-slate-500 font-semibold mr-1 shrink-0">Hızlı Tepki:</span>
+            <div id="quick-emojis-container" class="flex gap-1.5"></div>
+          </div>
+          <div class="flex items-center gap-1.5 overflow-x-auto py-1 custom-scrollbar border-t border-slate-900/40">
+            <span class="text-xs text-slate-500 font-semibold mr-1 shrink-0">Kolay Yaz:</span>
+            <div id="presets-container" class="flex gap-1.5"></div>
+          </div>
+        </div>
+
+        <form id="message-form" class="p-4 bg-slate-900 border-t border-slate-800 flex items-center gap-3 relative">
+          <button type="button" id="btn-emoji-trigger" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+            <i data-lucide="smile" class="w-6 h-6"></i>
+          </button>
+          <div id="emoji-picker" class="hidden absolute bottom-20 left-4 bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-2xl z-30 w-64">
+            <div class="text-xs font-semibold text-slate-400 mb-2">Sık Kullanılanlar</div>
+            <div id="emoji-picker-grid" class="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto custom-scrollbar"></div>
+          </div>
+          <input type="text" id="message-input" placeholder="Mesajınızı buraya yazın..." class="flex-1 py-3 px-4 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl outline-none text-slate-100 placeholder-slate-500 text-sm" required />
+          <button type="submit" id="btn-send-message" class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shrink-0">
+            <i data-lucide="send" class="w-5 h-5"></i>
+          </button>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <div id="qr-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+      <button id="btn-close-qr" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <div class="text-center space-y-4">
+        <div class="inline-block p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20"><i data-lucide="qr-code" class="w-8 h-8"></i></div>
+        <div>
+          <h3 class="font-bold text-lg text-white">Odaya Arkadaşlarını Çağır</h3>
+          <p class="text-xs text-slate-400 mt-1">Telefonunla taratıp odaya girmek veya arkadaşlarınla paylaşmak için bu QR kodu kullanabilirsin!</p>
+        </div>
+        <div class="space-y-2 text-left bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+          <label class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="link-2" class="w-3.5 h-3.5"></i> Paylaşım Linki</label>
+          <input type="text" id="share-link-input" class="w-full text-xs bg-slate-900 text-slate-200 border border-slate-800 rounded-lg p-2 outline-none" readonly />
+        </div>
+        <div class="bg-white p-4 rounded-xl inline-block shadow-inner">
+          <img id="qr-image" src="" alt="QR" class="w-44 h-44" />
+        </div>
+        <button id="btn-copy-link" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-700 transition-colors">
+          <i data-lucide="copy" id="copy-icon" class="w-4 h-4 text-slate-400"></i>
+          <span id="copy-text">Linki Kopyala</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const supabaseUrl = 'https://qbkhunjqfpnbseqynajy.supabase.co';
+    const supabaseKey = 'sb_publishable_5LGlnkTYHc7ju-SLM29Xyw_nlnm73Rs';
+    
+    const { createClient } = window.supabase;
+    const _supabase = createClient(supabaseUrl, supabaseKey);
+
+    let myUserId = localStorage.getItem('chat_user_id') || 'user-' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('chat_user_id', myUserId);
+    
+    let currentUsername = '';
+    let currentSelectedAvatar = null;
+    let isRegistered = false;
+    let soundEnabled = true;
+    let messages = [];
+    let onlineUsers = [];
+    let geoInfo = { city: 'Konya', ip: '176.40.xx.xx' };
+    let useLocalFallback = false;
+
+    let messagePollingInterval = null;
+    let presencePollingInterval = null;
+
+    const AVATAR_OPTIONS = [
+      { id: '🦊', label: 'Tilki', color: 'bg-orange-500' },
+      { id: '🦁', label: 'Aslan', color: 'bg-yellow-500' },
+      { id: '🐼', label: 'Panda', color: 'bg-slate-400' },
+      { id: '🦄', label: 'Unicorn', color: 'bg-pink-500' },
+      { id: '🐸', label: 'Kurbağa', color: 'bg-green-500' },
+      { id: '🐙', label: 'Ahtapot', color: 'bg-purple-500' }
+    ];
+
+    const PRESETS_CHATS = ["Selam millet! 👋", "Nasılsınız? 😊", "Burası çok iyiymiş! 🚀", "Kod yazıyorum 💻"];
+    const QUICK_EMOJIS = ["😀", "😂", "🔥", "❤️", "👍", "🎉"];
+    const ALL_EMOJIS = ["😀", "😂", "🤣", "😊", "😇", "🙂", "😍", "🥰", "😘", "😋", "😜", "😎", "🤩", "🥳", "👍", "🔥", "❤️", "🎉"];
+
+    currentSelectedAvatar = AVATAR_OPTIONS[0];
+
+    // Elementler
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+    const loginForm = document.getElementById('login-form');
+    const usernameInput = document.getElementById('username-input');
+    const avatarGrid = document.getElementById('avatar-grid');
+    const geoCityText = document.getElementById('geo-city');
+    const geoIpText = document.getElementById('geo-ip');
+    const messagesContainer = document.getElementById('messages-container');
+    const onlineUsersList = document.getElementById('online-users-list');
+    const activeCountText = document.getElementById('active-count');
+    const sidebarUserCount = document.getElementById('sidebar-user-count');
+    const connectionBadge = document.getElementById('connection-badge');
+    const headerAvatar = document.getElementById('header-avatar');
+    const headerUsername = document.getElementById('header-username');
+    const sidebarGeoCity = document.getElementById('sidebar-geo-city');
+    const sidebarGeoIp = document.getElementById('sidebar-geo-ip');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const quickEmojisContainer = document.getElementById('quick-emojis-container');
+    const presetsContainer = document.getElementById('presets-container');
+    const emojiPickerGrid = document.getElementById('emoji-picker-grid');
+    const emojiPicker = document.getElementById('emoji-picker');
+
+    window.addEventListener('load', () => {
+      buildAvatarGrid();
+      buildQuickEmojis();
+      buildPresets();
+      buildEmojiPicker();
+      fetchGeoData();
+      initShareUrl();
+      initAuth();
+      lucide.createIcons();
+    });
+
+    async function fetchGeoData() {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+          const data = await response.json();
+          geoInfo = { city: data.city || 'Konya', ip: (data.ip ? data.ip.split('.').slice(0,2).join('.') + '.xx.xx' : '176.40.xx.xx') };
+        }
+      } catch (e) {}
+      geoCityText.innerText = geoInfo.city;
+      geoIpText.innerText = geoInfo.ip;
+      sidebarGeoCity.innerText = geoInfo.city;
+      sidebarGeoIp.innerText = geoInfo.ip;
+    }
+
+    function initShareUrl() {
+      let currentUrl = window.location.href;
+      if (currentUrl.includes('about:') || currentUrl.includes('srcdoc')) currentUrl = 'https://mevcut-site-adresiniz.com';
+      document.getElementById('share-link-input').value = currentUrl;
+      document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=4f46e5&data=${encodeURIComponent(currentUrl)}`;
+    }
+
+    function buildAvatarGrid() {
+      avatarGrid.innerHTML = '';
+      AVATAR_OPTIONS.forEach((avatar) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${avatar.color} ${currentSelectedAvatar.id === avatar.id ? 'ring-4 ring-white scale-105' : 'opacity-70'}`;
+        btn.innerHTML = `<span class="text-2xl">${avatar.id}</span><span class="text-[10px] text-white font-medium">${avatar.label}</span>`;
+        btn.onclick = () => { currentSelectedAvatar = avatar; buildAvatarGrid(); };
+        avatarGrid.appendChild(btn);
+      });
+    }
+
+    function buildQuickEmojis() {
+      QUICK_EMOJIS.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = "px-2 py-1 bg-slate-900/60 rounded text-sm border border-slate-800 shrink-0";
+        btn.innerText = emoji;
+        btn.onclick = () => { messageInput.value += emoji; };
+        quickEmojisContainer.appendChild(btn);
+      });
+    }
+
+    function buildPresets() {
+      PRESETS_CHATS.forEach(preset => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = "px-2.5 py-1 bg-slate-900/40 border border-slate-800 text-slate-300 rounded text-xs shrink-0";
+        btn.innerText = preset;
+        btn.onclick = () => { sendDirectMessage(preset); };
+        presetsContainer.appendChild(btn);
+      });
+    }
+
+    function buildEmojiPicker() {
+      ALL_EMOJIS.forEach(emo => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = "text-xl p-1 hover:bg-slate-800 rounded";
+        btn.innerText = emo;
+        btn.onclick = () => { messageInput.value += emo; emojiPicker.classList.add('hidden'); };
+        emojiPickerGrid.appendChild(btn);
+      });
+    }
+
+    document.getElementById('btn-emoji-trigger').onclick = (e) => { e.stopPropagation(); emojiPicker.classList.toggle('hidden'); };
+    document.addEventListener('click', () => emojiPicker.classList.add('hidden'));
+    emojiPicker.onclick = (e) => e.stopPropagation();
+
+    function initAuth() {
+      const savedName = localStorage.getItem('chat_username');
+      if (savedName) {
+        currentUsername = savedName;
+        isRegistered = true;
+        setupChatMode();
+      }
+    }
+
+    loginForm.onsubmit = (e) => {
+      e.preventDefault();
+      const val = usernameInput.value.trim();
+      if (!val) return;
+      currentUsername = val;
+      localStorage.setItem('chat_username', val);
+      isRegistered = true;
+      setupChatMode();
+    };
+
+    document.getElementById('btn-logout').onclick = () => {
+      localStorage.removeItem('chat_username');
+      location.reload();
+    };
+
+    function setupChatMode() {
+      loginScreen.classList.add('hidden');
+      appScreen.classList.remove('hidden');
+      headerAvatar.innerText = currentSelectedAvatar.id;
+      headerAvatar.className = `w-8 h-8 rounded-full flex items-center justify-center text-lg ${currentSelectedAvatar.color}`;
+      headerUsername.innerText = currentUsername;
+
+      fetchMessages();
+      updatePresence();
+      fetchOnlineUsers();
+
+      messagePollingInterval = setInterval(fetchMessages, 2500);
+      presencePollingInterval = setInterval(() => { updatePresence(); fetchOnlineUsers(); }, 6000);
+    }
+
+    async function fetchMessages() {
+      if (useLocalFallback) return;
+      const { data, error } = await _supabase.from('messages').select('*').order('timestamp', { ascending: true }).limit(100);
+      
+      if (error) {
+        console.log("Veritabanı kontrol ediliyor...");
+        activateLocalFallback();
+        return;
+      }
+
+      useLocalFallback = false;
+      connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-900/50 leading-none";
+      connectionBadge.innerText = "Supabase Canlı Bağlantı (REST)";
+
+      messages = data || [];
+      renderMessages();
+    }
+
+    function renderMessages() {
+      messagesContainer.innerHTML = '';
+      if (messages.length === 0) {
+        messagesContainer.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-500"><p class="font-medium">Henüz hiç mesaj yok. Muhabbeti başlat!</p></div>`;
+        return;
+      }
+      messages.forEach((msg) => {
+        const isMe = msg.username === currentUsername;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `flex gap-3 max-w-[85%] mt-4 ${isMe ? 'ml-auto flex-row-reverse' : 'mr-auto'}`;
+        const dateStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        msgDiv.innerHTML = `
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${msg.avatar_color || 'bg-indigo-600'}">${msg.avatar || '🦊'}</div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''}">
+              <span class="text-xs text-slate-300 font-bold">${msg.username}</span>
+              <span class="text-[10px] text-slate-500">${msg.city || 'Türkiye'}</span>
+            </div>
+            <div class="p-3 rounded-2xl shadow-md break-words ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-none'}">
+              <p class="text-sm whitespace-pre-wrap">${msg.text}</p>
+              <span class="block text-[9px] mt-1 text-slate-400 text-right">${dateStr}</span>
+            </div>
+          </div>
+        `;
+        messagesContainer.appendChild(msgDiv);
+      });
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      lucide.createIcons();
+    }
+
+    async function updatePresence() {
+      if (!isRegistered || useLocalFallback) return;
+      await _supabase.from('active_users').upsert({
+        id: myUserId, username: currentUsername, avatar: currentSelectedAvatar.id,
+        avatar_color: currentSelectedAvatar.color, city: geoInfo.city, ip: geoInfo.ip, last_active_at: Date.now()
+      });
+    }
+
+    async function fetchOnlineUsers() {
+      if (useLocalFallback) return;
+      const activeThreshold = Date.now() - 20000;
+      const { data } = await _supabase.from('active_users').select('*').gt('last_active_at', activeThreshold);
+      onlineUsers = data || [];
+      renderOnlineUsers();
+    }
+
+    function renderOnlineUsers() {
+      onlineUsersList.innerHTML = '';
+      activeCountText.innerText = onlineUsers.length || 1;
+      sidebarUserCount.innerText = onlineUsers.length || 1;
+      
+      const list = onlineUsers.length > 0 ? onlineUsers : [{ id: myUserId, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, ip: geoInfo.ip }];
+      
+      list.forEach((user) => {
+        const item = document.createElement('div');
+        item.className = "flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-800/40";
+        item.innerHTML = `
+          <span class="w-8 h-8 rounded-full flex items-center justify-center ${user.avatar_color || 'bg-slate-700'}">${user.avatar || '👤'}</span>
+          <div>
+            <p class="text-sm font-semibold text-slate-200">${user.username} ${user.id === myUserId ? '(Sen)' : ''}</p>
+            <p class="text-[10px] text-slate-400">${user.city || 'Belirsiz'}</p>
+          </div>
+        `;
+        onlineUsersList.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    messageForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const txt = messageInput.value.trim();
+      if (!txt) return;
+      messageInput.value = '';
+      await sendDirectMessage(txt);
+    };
+
+    async function sendDirectMessage(text) {
+      if (useLocalFallback) {
+        messages.push({ id: Date.now(), text, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, timestamp: Date.now() });
+        renderMessages();
+        return;
+      }
+      await _supabase.from('messages').insert([{ text, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, timestamp: Date.now() }]);
+      fetchMessages();
+    }
+
+    function activateLocalFallback() {
+      if (useLocalFallback) return;
+      useLocalFallback = true;
+      connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-amber-950 text-amber-300 border border-amber-900/50 leading-none";
+      connectionBadge.innerText = "Yerel Simülasyon Odası (Veritabanı Bekleniyor)";
+      renderOnlineUsers();
+    }
+
+    document.getElementById('btn-sound').onclick = () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-icon').setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+      lucide.createIcons();
+    };
+    document.getElementById('btn-mobile-users').onclick = () => document.getElementById('user-sidebar').classList.remove('hidden');
+    document.getElementById('btn-close-sidebar').onclick = () => document.getElementById('user-sidebar').classList.add('hidden');
+    document.getElementById('btn-qr').onclick = () => document.getElementById('qr-modal').classList.remove('hidden');
+    document.getElementById('btn-close-qr').onclick = () => document.getElementById('qr-modal').classList.add('hidden');
+    
+    document.getElementById('btn-copy-link').onclick = () => {
+      navigator.clipboard.writeText(document.getElementById('share-link-input').value);
+      document.getElementById('copy-text').innerText = "Kopyalandı!";
+      setTimeout(() => { document.getElementById('copy-text').innerText = "Linki Kopyala"; }, 2000);
+    };
+  </script>
+</body>
+</html>
