@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MegaSohbet - Anlık Fotoğraf, Mesaj & Bildirim Odası</title>
   
-  <!-- ================= MOBİL UYGULAMA (PWA) META ETİKETLERİ ================= -->
+  <!-- ================= Apple (iOS / macOS) PWA Standartları ================= -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MegaSohbet">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#030712">
 
@@ -48,7 +49,7 @@
 
     /* Dinamik Cam Paneller */
     .glass-panel { 
-      background: rgba(15, 23, 42, 0.8); 
+      background: rgba(15, 23, 42, 0.85); 
       backdrop-filter: blur(16px); 
       border: 1px solid rgba(255, 255, 255, 0.08); 
     }
@@ -86,11 +87,42 @@
       </div>
 
       <form id="login-form" class="space-y-4">
+        <!-- Kullanıcı Adı -->
         <div>
           <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1.5">Adın / Rumuzun</label>
           <input type="text" id="username-input" placeholder="Örn: Ahmet" class="w-full px-4 py-3 glass-input rounded-xl text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 transition-all" required />
         </div>
 
+        <!-- Profil Fotoğrafı Seçimi -->
+        <div>
+          <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1.5">Profil Resmin (Seç veya Fotoğraf Yükle)</label>
+          <div class="flex items-center gap-3">
+            <div id="login-profile-preview" class="w-14 h-14 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl overflow-hidden shadow-inner shrink-0">
+              🦊
+            </div>
+            <div class="flex flex-col gap-1.5 w-full">
+              <div class="flex gap-2">
+                <button type="button" id="btn-login-upload-avatar" class="flex-1 py-2 bg-slate-850 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1">
+                  <i data-lucide="camera" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>Fotoğraf Seç</span>
+                </button>
+                <button type="button" id="btn-reset-avatar" class="py-2 px-3 bg-rose-950/20 hover:bg-rose-900/30 text-rose-400 border border-rose-900/30 rounded-xl text-xs font-semibold">
+                  Sıfırla
+                </button>
+              </div>
+              <input type="file" id="login-avatar-file" accept="image/*" class="hidden" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Hazır Emojiler Hızlı Seçim -->
+        <div class="grid grid-cols-6 gap-2">
+          {['🦊', '🦁', '🐼', '🦄', '🐸', '🐙'].map(emo => {
+            document.write(`<button type="button" onclick="window.selectPresetEmoji('${emo}')" class="py-1.5 bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 rounded-lg text-lg flex items-center justify-center transition-transform hover:scale-110">${emo}</button>`);
+          })}
+        </div>
+
+        <!-- Gelişmiş Oda Ayarları -->
         <div class="text-right">
           <button type="button" id="btn-show-advanced" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
             + Özel Oda veya PIN Gir
@@ -108,11 +140,15 @@
         </button>
       </form>
 
-      <!-- Ana Ekrana Ekle Butonu -->
-      <div class="mt-6 pt-4 border-t border-slate-800/60 text-center">
+      <!-- Uygulamayı Yükle / PWA Butonları -->
+      <div class="mt-6 pt-4 border-t border-slate-800/60 text-center space-y-2">
+        <button id="btn-pwa-install" class="hidden w-full py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/15 animate-pulse">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Uygulamayı Ana Ekranına İndir / Yükle</span>
+        </button>
         <button id="btn-show-guide" class="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5 mx-auto bg-slate-900/40 px-3 py-1.5 rounded-lg border border-slate-800 transition-all">
-          <i data-lucide="smartphone" class="w-4 h-4 text-indigo-400"></i>
-          <span>Uygulamayı Telefonun Ana Ekranına Ekle!</span>
+          <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
+          <span>Ana Ekran Kurulum Rehberi (macOS/iOS)</span>
         </button>
       </div>
     </div>
@@ -121,7 +157,7 @@
   <!-- ================= ANA UYGULAMA EKRANI ================= -->
   <div id="app-screen" class="hidden flex-1 flex flex-col overflow-hidden z-10">
     <!-- Üst Bar / Header -->
-    <header class="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-800">
+    <header class="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-slate-800 shadow-md">
       <div class="flex items-center gap-3">
         <div class="p-2 bg-indigo-600 rounded-xl text-white shadow-lg">
           <i data-lucide="message-square" class="w-5 h-5"></i>
@@ -135,27 +171,25 @@
         </div>
       </div>
 
-      <!-- Sağ Üst Panel (Tema, Bildirim, Cihaz Ekleme Kontrolleri) -->
-      <div class="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-        <!-- Tema Değiştirme Paleti -->
-        <button id="btn-change-theme" class="p-2 text-indigo-400 hover:text-white rounded-lg transition-all" title="Tema Değiştir">
-          <i data-lucide="palette" class="w-4 h-4"></i>
-        </button>
-
-        <!-- Arka Plan Bildirim Açma Butonu -->
-        <button id="btn-toggle-notifications" class="p-2 text-amber-400 hover:text-amber-300 rounded-lg transition-colors" title="Arka Plan Bildirimlerini Aç">
-          <i data-lucide="bell-off" id="icon-bell" class="w-4 h-4"></i>
-        </button>
-
+      <!-- Sağ Üst Panel -->
+      <div class="flex items-center gap-2">
         <!-- Telefon / Cihaz Ekleme Butonu -->
         <button id="btn-add-phone" class="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1" title="Telefon Ekle / Cihaz Bağla">
           <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">Telefon Ekle</span>
         </button>
 
+        <!-- Profil & Ayarlar Tetikleyici Buton -->
+        <button id="btn-open-settings" class="flex items-center gap-1.5 p-1 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700/50 transition-all" title="Ayarlar ve Profil">
+          <div id="header-avatar-container" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm overflow-hidden shrink-0">
+            🦊
+          </div>
+          <span id="header-username-text" class="text-xs font-bold pr-2 hidden sm:inline">Yükleniyor</span>
+        </button>
+
         <!-- Aktif Kişiler Simgesi (Mobil) -->
-        <button id="btn-toggle-sidebar" class="p-1.5 text-slate-400 hover:text-white md:hidden">
-          <i data-lucide="users" class="w-4 h-4"></i>
+        <button id="btn-toggle-sidebar" class="p-2 text-slate-400 hover:text-white bg-slate-800/40 rounded-xl md:hidden">
+          <i data-lucide="users" class="w-4.5 h-4.5"></i>
         </button>
       </div>
     </header>
@@ -163,7 +197,7 @@
     <!-- İçerik Alanı -->
     <div class="flex flex-1 overflow-hidden relative">
       <!-- Kimler Var/Yok Paneli (Sidebar) -->
-      <aside id="sidebar-users" class="w-64 bg-slate-900/60 border-r border-slate-800 flex flex-col absolute md:relative inset-y-0 left-0 z-20 -translate-x-full md:translate-x-0 transition-transform duration-300">
+      <aside id="sidebar-users" class="w-64 bg-slate-900/60 border-r border-slate-800 flex flex-col absolute md:relative inset-y-0 left-0 z-20 -translate-x-full md:translate-x-0 transition-transform duration-300 bg-slate-950 md:bg-slate-900/60">
         <div class="p-3 border-b border-slate-800 font-bold text-xs uppercase tracking-wider text-slate-400 flex justify-between items-center">
           <span>Odadakiler (Anlık)</span>
           <button id="btn-close-sidebar" class="md:hidden text-slate-500"><i data-lucide="x" class="w-4 h-4"></i></button>
@@ -175,10 +209,10 @@
       <main class="flex-1 flex flex-col overflow-hidden bg-slate-950/40">
         <div id="messages-box" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar selectable"></div>
 
-        <!-- Önizleme Sıkıştırılmış Resim Alanı (Yüklenirken görünür) -->
-        <div id="image-preview-container" class="hidden px-4 py-2 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between">
+        <!-- Önizleme Sıkıştırılmış Resim Alanı -->
+        <div id="image-preview-container" class="hidden px-4 py-2 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between animate-fade-in">
           <div class="flex items-center gap-2">
-            <span class="text-xs text-indigo-400">Yüklenecek Fotoğraf Sıkıştırıldı:</span>
+            <span class="text-xs text-indigo-400">Yüklenecek Fotoğraf Hazır:</span>
             <img id="image-preview-element" src="" alt="Önizleme" class="w-10 h-10 object-cover rounded-lg border border-slate-700" />
           </div>
           <button type="button" id="btn-cancel-image" class="text-rose-500 hover:text-rose-400 text-xs font-bold">Vazgeç</button>
@@ -203,43 +237,96 @@
     </div>
   </div>
 
-  <!-- ================= TEMA SEÇİM MODALI ================= -->
-  <div id="theme-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="w-full max-w-sm bg-slate-900 border border-slate-850 rounded-3xl p-6 shadow-2xl relative">
-      <button id="btn-close-theme" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-xl transition-all">
+  <!-- ================= PROFİL & AYARLAR DRAWER (SAĞDAN AÇILAN PANEL) ================= -->
+  <div id="settings-drawer" class="fixed inset-y-0 right-0 w-80 bg-slate-900/95 border-l border-slate-800 shadow-2xl z-40 translate-x-full transition-transform duration-300 flex flex-col">
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+      <div class="flex items-center gap-2 text-indigo-400">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        <span class="font-bold text-slate-200">Profil & Ayarlar</span>
+      </div>
+      <button id="btn-close-settings" class="text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-xl transition-colors">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
+    </div>
 
-      <div class="text-center space-y-4">
-        <div class="inline-block p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl">
-          <i data-lucide="palette" class="w-8 h-8"></i>
+    <!-- Drawer Content -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
+      <!-- Kullanıcı Profil Fotoğrafı Güncelleme -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Profil Fotoğrafı</h4>
+        <div class="flex items-center gap-4">
+          <div id="settings-profile-preview" class="w-16 h-16 rounded-full bg-slate-800 border-2 border-indigo-500/40 flex items-center justify-center text-3xl overflow-hidden shadow-lg">
+            🦊
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <button type="button" id="btn-settings-upload-avatar" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+              <i data-lucide="camera" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Fotoğraf Değiştir</span>
+            </button>
+            <button type="button" id="btn-settings-reset-avatar" class="px-3 py-1.5 bg-rose-950/20 hover:bg-rose-900/30 text-rose-400 border border-rose-900/30 rounded-xl text-xs font-semibold">
+              Sıfırla
+            </button>
+            <input type="file" id="settings-avatar-file" accept="image/*" class="hidden" />
+          </div>
         </div>
-        <h3 class="font-bold text-lg text-white">Ekran Temanı Özelleştir</h3>
-        <p class="text-xs text-slate-400">Bu tema seçimi sadece senin ekranına özel kalacaktır.</p>
+      </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2">
-          <!-- Koyu Gece -->
-          <button type="button" onclick="setAppTheme('dark')" class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center gap-1.5 hover:border-indigo-500 transition-all">
-            <span class="w-6 h-6 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span></span>
-            <span class="text-xs font-semibold">Koyu Gece</span>
+      <!-- Kullanıcı İsmi Değiştirme -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Takma Adın / Rumuzun</h4>
+        <div class="flex gap-2">
+          <input type="text" id="settings-username-input" class="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs outline-none" placeholder="Yeni adın..." />
+          <button type="button" id="btn-save-username" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-colors">Güncelle</button>
+        </div>
+      </div>
+
+      <!-- BİLDİRİMLERİ AÇ / KAPAT BUTONU -->
+      <div class="p-4 bg-slate-950/40 rounded-2xl border border-slate-850 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="space-y-0.5">
+            <h4 class="text-xs font-bold uppercase text-slate-200 tracking-wider">Arka Plan Bildirimleri</h4>
+            <p class="text-[10px] text-slate-400 leading-tight">Uygulama arka plandayken veya telefon kilitliyken bildirim gönderir.</p>
+          </div>
+          <!-- iOS Tarzı Şık Toggle Switch -->
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="switch-notifications" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+        <p id="notification-status-text" class="text-[10px] text-rose-400 font-semibold">Bildirim İzni Alınmadı</p>
+      </div>
+
+      <!-- Ekran Teması Özelleştir -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Ekran Teması</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="window.setAppTheme('dark')" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center gap-1 hover:border-indigo-500 transition-all">
+            <span class="w-5 h-5 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span></span>
+            <span class="text-[10px] font-semibold">Koyu Gece</span>
           </button>
-          <!-- Siber Punk -->
-          <button type="button" onclick="setAppTheme('cyber')" class="p-3 bg-fuchsia-950/20 border border-fuchsia-900/40 rounded-xl flex flex-col items-center gap-1.5 hover:border-fuchsia-500 transition-all">
-            <span class="w-6 h-6 rounded-full bg-fuchsia-950 border border-fuchsia-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-fuchsia-500"></span></span>
-            <span class="text-xs font-semibold">Siber Punk</span>
+          <button type="button" onclick="window.setAppTheme('cyber')" class="p-2.5 bg-fuchsia-950/20 border border-fuchsia-900/40 rounded-xl flex flex-col items-center gap-1 hover:border-fuchsia-500 transition-all">
+            <span class="w-5 h-5 rounded-full bg-fuchsia-950 border border-fuchsia-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-fuchsia-500"></span></span>
+            <span class="text-[10px] font-semibold">Siber Punk</span>
           </button>
-          <!-- Zümrüt Ormanı -->
-          <button type="button" onclick="setAppTheme('emerald')" class="p-3 bg-emerald-950/20 border border-emerald-900/40 rounded-xl flex flex-col items-center gap-1.5 hover:border-emerald-500 transition-all">
-            <span class="w-6 h-6 rounded-full bg-emerald-950 border border-emerald-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span></span>
-            <span class="text-xs font-semibold">Zümrüt Ormanı</span>
+          <button type="button" onclick="window.setAppTheme('emerald')" class="p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl flex flex-col items-center gap-1 hover:border-emerald-500 transition-all">
+            <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span></span>
+            <span class="text-[10px] font-semibold">Zümrüt Ormanı</span>
           </button>
-          <!-- Sıcak Gün Batımı -->
-          <button type="button" onclick="setAppTheme('sunset')" class="p-3 bg-amber-950/10 border border-amber-900/40 rounded-xl flex flex-col items-center gap-1.5 hover:border-rose-500 transition-all">
+          <button type="button" onclick="window.setAppTheme('sunset')" class="p-2.5 bg-amber-950/10 border border-amber-900/40 rounded-xl flex flex-col items-center gap-1 hover:border-rose-500 transition-all">
             <span class="w-6 h-6 rounded-full bg-amber-950 border border-rose-800 flex items-center justify-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span></span>
-            <span class="text-xs font-semibold">Gün Batımı</span>
+            <span class="text-[10px] font-semibold">Gün Batımı</span>
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-4 border-t border-slate-800 bg-slate-950/40 flex flex-col gap-2">
+      <button id="btn-logout" class="w-full py-2.5 bg-rose-950/20 hover:bg-rose-900/30 text-rose-400 border border-rose-900/30 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Profilimi Temizle ve Çıkış Yap</span>
+      </button>
     </div>
   </div>
 
@@ -260,13 +347,13 @@
         <div class="text-left space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-850 text-xs">
           <div class="space-y-1">
             <p class="font-bold text-indigo-400 flex items-center gap-1">📱 iPhone (Safari) İçin:</p>
-            <p class="text-slate-300">1. Alttaki <strong class="text-white">"Paylaş" (Kare içinden çıkan yukarı ok)</strong> butonuna bas.</p>
+            <p class="text-slate-300">1. Alttaki / Üstteki <strong class="text-white">"Paylaş" (Kare içinden çıkan yukarı ok)</strong> simgesine bas.</p>
             <p class="text-slate-300">2. Menüden aşağı in ve <strong class="text-white">"Ana Ekrana Ekle"</strong> seçeneğini seç.</p>
           </div>
           <div class="space-y-1 pt-2 border-t border-slate-800/60">
-            <p class="font-bold text-emerald-400 flex items-center gap-1">🤖 Android (Chrome) İçin:</p>
-            <p class="text-slate-300">1. Sağa üstteki <strong class="text-white">üç noktaya (⋮)</strong> bas.</p>
-            <p class="text-slate-300">2. Menüden <strong class="text-white">"Ana Ekrana Ekle"</strong> veya <strong class="text-white">"Uygulamayı Yükle"</strong> seç.</p>
+            <p class="font-bold text-emerald-400 flex items-center gap-1">🤖 Android & Windows (Chrome) İçin:</p>
+            <p class="text-slate-300">1. Giriş ekranındaki <strong class="text-white">"Uygulamayı İndir"</strong> butonuna bas.</p>
+            <p class="text-slate-300">2. Veya adres çubuğunun yanındaki <strong class="text-white">"Yükle" (Bilgisayar/İndir simgesi)</strong> tıkla.</p>
           </div>
         </div>
 
@@ -298,21 +385,14 @@
           <span id="pair-pin-text" class="text-3xl font-mono font-extrabold text-indigo-400 tracking-widest">------</span>
         </div>
 
-        <div class="text-left space-y-2 bg-slate-950/40 p-3 rounded-xl border border-slate-900 text-[11px] text-slate-400">
-          <p class="font-bold text-slate-300">📱 Nasıl Yapılır?</p>
-          <p>1. Telefonundan bu sohbet sitesini aç.</p>
-          <p>2. "Oda Kodu" yerine bu yukarıdaki 6 haneli kodu yaz.</p>
-          <p>3. Giriş yaptığında sistem seni otomatik olarak bu kalıcı odaya bağlar!</p>
-        </div>
-
-        <button id="btn-close-pair-footer" class="w-full py-3 bg-slate-850 hover:bg-slate-750 text-slate-200 font-semibold rounded-xl text-xs transition-colors">
+        <button id="btn-close-pair-footer" class="w-full py-3 bg-slate-800 hover:bg-slate-755 text-slate-200 font-semibold rounded-xl text-xs transition-colors">
           Kapat
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Off-Screen Canvas (Fotoğrafları Sıkıştırmak İçin Kullanılır) -->
+  <!-- Sıkıştırma Alanı -->
   <canvas id="compressor-canvas" class="hidden"></canvas>
 
   <!-- ================= SUPABASE VE JAVASCRIPT AKIŞI ================= -->
@@ -334,7 +414,7 @@
       navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(err => console.log("PWA SW register error:", err));
     }
 
-    // Manifestosunun dinamik olarak eklenmesi (Yüklenebilir uygulama hissi için)
+    // Manifestosunun dinamik olarak eklenmesi
     const manifestObj = {
       name: "MegaSohbet",
       short_name: "MegaSohbet",
@@ -354,12 +434,14 @@
     localStorage.setItem('rt_user_id', myId);
 
     let username = '';
-    let room = 'genel-sohbet'; // Oda varsayılan olarak her zaman kalıcı genel-sohbettir!
+    let room = 'genel-sohbet';
     let isNotificationGranted = false;
     let selectedCompressedImage = null; // Gönderilecek sıkıştırılmış Base64 resmi
+    let userAvatarData = localStorage.getItem('saved_chat_avatar') || '🦊'; // Profil Resmi (Base64 veya Emoji)
     
     let messages = [];
     let activeUsers = [];
+    let deferredPrompt = null; // PWA Yükleme tetikleyicisi
 
     let syncInterval = null;
 
@@ -404,38 +486,188 @@
     const themeModal = document.getElementById('theme-modal');
     const btnCloseTheme = document.getElementById('btn-close-theme');
 
-    btnChangeTheme.onclick = () => themeModal.classList.remove('hidden');
-    btnCloseTheme.onclick = () => themeModal.classList.add('hidden');
+    // Profil Resimleri Seçim Elemanları
+    const loginProfilePreview = document.getElementById('login-profile-preview');
+    const btnLoginUploadAvatar = document.getElementById('btn-login-upload-avatar');
+    const loginAvatarFile = document.getElementById('login-avatar-file');
+    const btnResetAvatar = document.getElementById('btn-reset-avatar');
+    const btnPwaInstall = document.getElementById('btn-pwa-install');
 
-    btnShowAdvanced.onclick = () => {
-      advancedRoomContainer.classList.toggle('hidden');
-    };
+    // Drawer Elemanları
+    const btnOpenSettings = document.getElementById('btn-open-settings');
+    const settingsDrawer = document.getElementById('settings-drawer');
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    const settingsProfilePreview = document.getElementById('settings-profile-preview');
+    const btnSettingsUploadAvatar = document.getElementById('btn-settings-upload-avatar');
+    const settingsAvatarFile = document.getElementById('settings-avatar-file');
+    const btnSettingsResetAvatar = document.getElementById('btn-settings-reset-avatar');
+    const settingsUsernameInput = document.getElementById('settings-username-input');
+    const btnSaveUsername = document.getElementById('btn-save-username');
+    const switchNotifications = document.getElementById('switch-notifications');
+    const notificationStatusText = document.getElementById('notification-status-text');
+    const btnLogout = document.getElementById('btn-logout');
+
+    const headerAvatarContainer = document.getElementById('header-avatar-container');
+    const headerUsernameText = document.getElementById('header-username-text');
+
+    // PWA Yükleme Algılayıcısı
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (btnPwaInstall) {
+        btnPwaInstall.classList.remove('hidden');
+      }
+    });
+
+    if (btnPwaInstall) {
+      btnPwaInstall.onclick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          btnPwaInstall.classList.add('hidden');
+        }
+        deferredPrompt = null;
+      };
+    }
+
+    if (btnChangeTheme) btnChangeTheme.onclick = () => themeModal.classList.remove('hidden');
+    if (btnCloseTheme) btnCloseTheme.onclick = () => themeModal.classList.add('hidden');
+
+    if (btnShowAdvanced) {
+      btnShowAdvanced.onclick = () => {
+        advancedRoomContainer.classList.toggle('hidden');
+      };
+    }
 
     const btnShowGuide = document.getElementById('btn-show-guide');
     const guideModal = document.getElementById('guide-modal');
     const btnCloseGuide = document.getElementById('btn-close-guide');
     const btnCloseGuideFooter = document.getElementById('btn-close-guide-footer');
 
-    btnShowGuide.onclick = () => guideModal.classList.remove('hidden');
-    btnCloseGuide.onclick = () => guideModal.classList.add('hidden');
-    btnCloseGuideFooter.onclick = () => guideModal.classList.add('hidden');
+    if (btnShowGuide) btnShowGuide.onclick = () => guideModal.classList.remove('hidden');
+    if (btnCloseGuide) btnCloseGuide.onclick = () => guideModal.classList.add('hidden');
+    if (btnCloseGuideFooter) btnCloseGuideFooter.onclick = () => guideModal.classList.add('hidden');
 
-    document.getElementById('btn-toggle-sidebar').onclick = () => sidebarUsers.classList.toggle('-translate-x-full');
-    document.getElementById('btn-close-sidebar').onclick = () => sidebarUsers.classList.add('-translate-x-full');
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    if (btnToggleSidebar) {
+      btnToggleSidebar.onclick = () => sidebarUsers.classList.toggle('-translate-x-full');
+    }
+    const btnCloseSidebar = document.getElementById('btn-close-sidebar');
+    if (btnCloseSidebar) {
+      btnCloseSidebar.onclick = () => sidebarUsers.classList.add('-translate-x-full');
+    }
+
+    // Drawer Aç / Kapa (Hata Korumalı)
+    if (btnOpenSettings) {
+      btnOpenSettings.onclick = () => {
+        if (settingsDrawer) settingsDrawer.classList.remove('translate-x-full');
+        if (settingsUsernameInput) settingsUsernameInput.value = username;
+        updateSettingsPreview();
+      };
+    }
+    if (btnCloseSettings) {
+      btnCloseSettings.onclick = () => {
+        if (settingsDrawer) settingsDrawer.classList.add('translate-x-full');
+      };
+    }
+
+    // Giriş Profil Resmi Seçimi (Kamera veya Dosya)
+    if (btnLoginUploadAvatar) {
+      btnLoginUploadAvatar.onclick = () => loginAvatarFile.click();
+    }
+
+    if (loginAvatarFile) {
+      loginAvatarFile.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        handleAvatarFileChange(file);
+      };
+    }
+
+    // Ayarlar Profil Resmi Değişimi
+    if (btnSettingsUploadAvatar) {
+      btnSettingsUploadAvatar.onclick = () => settingsAvatarFile.click();
+    }
+    if (settingsAvatarFile) {
+      settingsAvatarFile.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        handleAvatarFileChange(file);
+      };
+    }
+
+    function handleAvatarFileChange(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const ctx = compressorCanvas.getContext('2d');
+          compressorCanvas.width = 100;
+          compressorCanvas.height = 100;
+          ctx.drawImage(img, 0, 0, 100, 100);
+          
+          const profileBase64 = compressorCanvas.toDataURL('image/jpeg', 0.8);
+          userAvatarData = profileBase64;
+          localStorage.setItem('saved_chat_avatar', profileBase64);
+          
+          updateSettingsPreview();
+          updateHeaderProfile();
+        }
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Güvenli Buton Atamaları (Beni Hatırla aktifken domda buton bulunamayabilir)
+    if (btnResetAvatar) btnResetAvatar.onclick = () => resetUserAvatar();
+    if (btnSettingsResetAvatar) btnSettingsResetAvatar.onclick = () => resetUserAvatar();
+
+    function resetUserAvatar() {
+      userAvatarData = '🦊';
+      localStorage.setItem('saved_chat_avatar', '🦊');
+      updateSettingsPreview();
+      updateHeaderProfile();
+    }
+
+    // Küresel Emoji Seçici Tanımlaması
+    window.selectPresetEmoji = function(emo) {
+      userAvatarData = emo;
+      localStorage.setItem('saved_chat_avatar', emo);
+      updateSettingsPreview();
+      updateHeaderProfile();
+    };
+
+    function updateSettingsPreview() {
+      const html = getAvatarElementHtml(userAvatarData, "w-16 h-16 text-3xl");
+      if (loginProfilePreview) loginProfilePreview.innerHTML = html;
+      if (settingsProfilePreview) settingsProfilePreview.innerHTML = html;
+    }
+
+    function updateHeaderProfile() {
+      if (headerAvatarContainer) headerAvatarContainer.innerHTML = getAvatarElementHtml(userAvatarData, "w-8 h-8 text-sm");
+      if (headerUsernameText) headerUsernameText.innerText = username;
+    }
+
+    // Ayarlarda Kullanıcı Adı Güncelleme
+    if (btnSaveUsername) {
+      btnSaveUsername.onclick = () => {
+        const newName = settingsUsernameInput.value.trim();
+        if (newName) {
+          username = newName;
+          localStorage.setItem('saved_chat_username', username);
+          updateHeaderProfile();
+          updatePresenceAndFetch();
+          
+          btnSaveUsername.innerText = "Güncellendi!";
+          setTimeout(() => { btnSaveUsername.innerText = "Güncelle"; }, 1500);
+        }
+      };
+    }
 
     window.addEventListener('load', () => {
-      // Yerel hafızadan kaydedilen temayı yükle
       const savedTheme = localStorage.getItem('app_user_theme') || 'dark';
       window.setAppTheme(savedTheme);
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlPin = urlParams.get('pin');
-      if (urlPin) {
-        roomInput.value = urlPin;
-        loginInfoBox.innerHTML = `🌟 <strong>PIN algılandı!</strong> Kod alanına otomatik yerleştirildi.`;
-        loginInfoBox.classList.remove('hidden');
-        advancedRoomContainer.classList.remove('hidden');
-      }
 
       // Kalıcı Giriş Kontrolü (Beni Hatırla)
       const savedName = localStorage.getItem('saved_chat_username');
@@ -449,46 +681,59 @@
         appScreen.classList.remove('hidden');
         roomTitle.innerText = `ODA: ${room}`;
         
+        updateHeaderProfile();
         startHttpRealtime();
+      } else {
+        updateSettingsPreview();
       }
       
+      // Bildirimleri Kontrol et ve Switch durumunu ayarla
       if ("Notification" in window) {
         if (Notification.permission === "granted") {
+          isNotificationGranted = true;
+          if (switchNotifications) switchNotifications.checked = true;
           setNotificationState(true);
+        } else {
+          setNotificationState(false);
         }
       } else {
-        btnToggleNotifications.style.display = 'none';
+        if (switchNotifications) switchNotifications.disabled = true;
+        if (notificationStatusText) notificationStatusText.innerText = "Cihaz Desteklemiyor";
       }
     });
 
-    // Tema Değiştirici Fonksiyon
+    // Tema Değiştirici Fonksiyon (Görsel kalkanları dinamik çekerek hata korumalı hale getirdik)
     window.setAppTheme = function(theme) {
       const body = document.getElementById('main-body');
       const glow1 = document.getElementById('theme-glow-1');
       const glow2 = document.getElementById('theme-glow-2');
+      const tModal = document.getElementById('theme-modal');
 
       localStorage.setItem('app_user_theme', theme);
 
-      if (theme === 'cyber') {
-        body.className = "h-full bg-fuchsia-950/20 text-fuchsia-100 font-sans flex flex-col overflow-hidden relative";
-        glow1.style.background = "radial-gradient(circle, rgba(236,72,153,0.8) 0%, transparent 70%)";
-        glow2.style.background = "radial-gradient(circle, rgba(168,85,247,0.8) 0%, transparent 70%)";
-      } else if (theme === 'emerald') {
-        body.className = "h-full bg-emerald-950/20 text-emerald-100 font-sans flex flex-col overflow-hidden relative";
-        glow1.style.background = "radial-gradient(circle, rgba(16,185,129,0.8) 0%, transparent 70%)";
-        glow2.style.background = "radial-gradient(circle, rgba(5,150,105,0.8) 0%, transparent 70%)";
-      } else if (theme === 'sunset') {
-        body.className = "h-full bg-amber-950/10 text-orange-100 font-sans flex flex-col overflow-hidden relative";
-        glow1.style.background = "radial-gradient(circle, rgba(244,63,94,0.8) 0%, transparent 70%)";
-        glow2.style.background = "radial-gradient(circle, rgba(245,158,11,0.8) 0%, transparent 70%)";
-      } else {
-        // default dark
-        body.className = "h-full bg-slate-950 text-slate-100 font-sans flex flex-col overflow-hidden relative";
-        glow1.style.background = "radial-gradient(circle, rgba(99,102,241,0.8) 0%, transparent 70%)";
-        glow2.style.background = "radial-gradient(circle, rgba(139,92,246,0.8) 0%, transparent 70%)";
+      if (body) {
+        if (theme === 'cyber') {
+          body.className = "h-full bg-fuchsia-950/20 text-fuchsia-100 font-sans flex flex-col overflow-hidden relative";
+          if (glow1) glow1.style.background = "radial-gradient(circle, rgba(236,72,153,0.8) 0%, transparent 70%)";
+          if (glow2) glow2.style.background = "radial-gradient(circle, rgba(168,85,247,0.8) 0%, transparent 70%)";
+        } else if (theme === 'emerald') {
+          body.className = "h-full bg-emerald-950/20 text-emerald-100 font-sans flex flex-col overflow-hidden relative";
+          if (glow1) glow1.style.background = "radial-gradient(circle, rgba(16,185,129,0.8) 0%, transparent 70%)";
+          if (glow2) glow2.style.background = "radial-gradient(circle, rgba(5,150,105,0.8) 0%, transparent 70%)";
+        } else if (theme === 'sunset') {
+          body.className = "h-full bg-amber-950/10 text-orange-100 font-sans flex flex-col overflow-hidden relative";
+          if (glow1) glow1.style.background = "radial-gradient(circle, rgba(244,63,94,0.8) 0%, transparent 70%)";
+          if (glow2) glow2.style.background = "radial-gradient(circle, rgba(245,158,11,0.8) 0%, transparent 70%)";
+        } else {
+          body.className = "h-full bg-slate-950 text-slate-100 font-sans flex flex-col overflow-hidden relative";
+          if (glow1) glow1.style.background = "radial-gradient(circle, rgba(99,102,241,0.8) 0%, transparent 70%)";
+          if (glow2) glow2.style.background = "radial-gradient(circle, rgba(139,92,246,0.8) 0%, transparent 70%)";
+        }
       }
 
-      themeModal.classList.add('hidden');
+      if (tModal) {
+        tModal.classList.add('hidden');
+      }
     }
 
     // Giriş İşlemi
@@ -498,7 +743,6 @@
       let inputRoom = roomInput.value.trim().toLowerCase() || 'genel-sohbet';
       if(!username) return;
 
-      // Yerel hafızaya kaydet
       localStorage.setItem('saved_chat_username', username);
       localStorage.setItem('saved_chat_room', inputRoom);
 
@@ -533,27 +777,42 @@
       appScreen.classList.remove('hidden');
       roomTitle.innerText = `ODA: ${room}`;
 
+      updateHeaderProfile();
       startHttpRealtime();
     };
+
+    // Çıkış Yapma
+    if (btnLogout) {
+      btnLogout.onclick = () => {
+        localStorage.removeItem('saved_chat_username');
+        localStorage.removeItem('saved_chat_room');
+        location.reload();
+      };
+    }
 
     // ================= REALTIME POLLESY SİSTEMİ =================
     function startHttpRealtime() {
       updatePresenceAndFetch();
       if (syncInterval) clearInterval(syncInterval);
-      syncInterval = setInterval(updatePresenceAndFetch, 1000); // 1 saniyelik akış
+      syncInterval = setInterval(updatePresenceAndFetch, 1000); // 1 saniyelik pürüzsüz akış
     }
 
     async function updatePresenceAndFetch() {
       if (!username || !room) return;
       const now = Date.now();
 
-      await supabase.from('active_users').upsert({
+      // DİKKAT: Veritabanında olmayan 'micOpen' sütununu tamamen kaldırdık!
+      const { error } = await supabase.from('active_users').upsert({
         id: myId,
         username: username,
         room: room,
         last_active_at: now,
-        micOpen: false
+        avatar: userAvatarData
       });
+
+      if (error) {
+        console.error("Varlık bildirim hatası:", error.message);
+      }
 
       await Promise.all([
         fetchLiveMessages(),
@@ -589,8 +848,7 @@
     }
 
     async function fetchLiveUsers() {
-      // SAAT FARKI TOLERANS KALKANI (300 saniye / 5 dakika)
-      // Cihaz saatleri yanlış veya eşzamansız olsa bile anlık listede birbirlerini görürler!
+      // SAAT TOLERANS KALKANI (300 Saniye - 5 Dakika)
       const activeThreshold = Date.now() - 300000; 
 
       const { data, error } = await supabase
@@ -598,14 +856,14 @@
         .select('*')
         .eq('room', room)
         .gt('last_active_at', activeThreshold)
-        .not('id', 'eq', 'anti_cache_' + Date.now() + '_' + Math.random());
+        .not('id', 'eq', 'anti_cache_user_' + Date.now() + '_' + Math.random());
 
       if (!error && data) {
-        // Liste titremesini ve kaymasını durdurmak için sıralamayı ID'ye göre sabitliyoruz
+        // Çift kaydı ve titremeyi önlemek için ID'ye göre hizalıyoruz
         const sortedData = data.sort((a, b) => a.id.localeCompare(b.id));
 
-        const checkStrNew = JSON.stringify(sortedData.map(u => u.id));
-        const checkStrOld = JSON.stringify(activeUsers.map(u => u.id));
+        const checkStrNew = JSON.stringify(sortedData.map(u => ({ id: u.id, name: u.username, img: u.avatar })));
+        const checkStrOld = JSON.stringify(activeUsers.map(u => ({ id: u.id, name: u.username, img: u.avatar })));
 
         if (checkStrNew !== checkStrOld) {
           activeUsers = sortedData;
@@ -615,55 +873,61 @@
     }
 
     // Fotoğraf Seçildiğinde Sıkıştırma İşlemi
-    btnUploadTrigger.onclick = () => fileInput.click();
+    if (btnUploadTrigger) {
+      btnUploadTrigger.onclick = () => fileInput.click();
+    }
 
-    fileInput.onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    if (fileInput) {
+      fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-          const ctx = compressorCanvas.getContext('2d');
-          const max_size = 400;
-          let width = img.width;
-          let height = img.height;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            const ctx = compressorCanvas.getContext('2d');
+            const max_size = 400;
+            let width = img.width;
+            let height = img.height;
 
-          if (width > height) {
-            if (width > max_size) {
-              height *= max_size / width;
-              width = max_size;
+            if (width > height) {
+              if (width > max_size) {
+                height *= max_size / width;
+                width = max_size;
+              }
+            } else {
+              if (height > max_size) {
+                width *= max_size / height;
+                height = max_size;
+              }
             }
-          } else {
-            if (height > max_size) {
-              width *= max_size / height;
-              height = max_size;
-            }
+
+            compressorCanvas.width = width;
+            compressorCanvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = compressorCanvas.toDataURL('image/jpeg', 0.6);
+            selectedCompressedImage = compressedDataUrl;
+
+            imagePreviewElement.src = compressedDataUrl;
+            imagePreviewContainer.classList.remove('hidden');
+            messageInput.required = false;
           }
-
-          compressorCanvas.width = width;
-          compressorCanvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-
-          const compressedDataUrl = compressorCanvas.toDataURL('image/jpeg', 0.6);
-          selectedCompressedImage = compressedDataUrl;
-
-          imagePreviewElement.src = compressedDataUrl;
-          imagePreviewContainer.classList.remove('hidden');
-          messageInput.required = false;
-        }
-        img.src = event.target.result;
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
-    };
+    }
 
-    btnCancelImage.onclick = () => {
-      selectedCompressedImage = null;
-      imagePreviewContainer.classList.add('hidden');
-      messageInput.required = true;
-      fileInput.value = '';
-    };
+    if (btnCancelImage) {
+      btnCancelImage.onclick = () => {
+        selectedCompressedImage = null;
+        imagePreviewContainer.classList.add('hidden');
+        messageInput.required = true;
+        fileInput.value = '';
+      };
+    }
 
     messageForm.onsubmit = async (e) => {
       e.preventDefault();
@@ -686,7 +950,8 @@
         username: username,
         text: finalPayload,
         room: room,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        avatar: userAvatarData // Profil resmini mesaja iliştiriyoruz
       };
 
       appendLocalMessage(msgData);
@@ -701,6 +966,15 @@
       if (!messages.some(m => m.username === msg.username && m.text === msg.text && Math.abs(m.timestamp - msg.timestamp) < 5000)) {
         messages.push(msg);
         renderMessages();
+      }
+    }
+
+    // Profil Resmi Çizimi (Emoji veya Yüklenen Resim Ayrıştırma)
+    function getAvatarElementHtml(avatarVal, sizeClass = "w-10 h-10 text-xl") {
+      if (avatarVal && avatarVal.startsWith('data:image')) {
+        return `<div class="${sizeClass} rounded-xl overflow-hidden shrink-0 border border-white/10 shadow"><img src="${avatarVal}" class="w-full h-full object-cover" /></div>`;
+      } else {
+        return `<div class="${sizeClass} rounded-xl bg-slate-800 border border-white/5 flex items-center justify-center shrink-0 shadow">${avatarVal || '👤'}</div>`;
       }
     }
 
@@ -720,7 +994,7 @@
       messages.forEach((msg) => {
         const isMe = msg.username === username;
         const card = document.createElement('div');
-        card.className = `flex flex-col max-w-[80%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'}`;
+        card.className = `flex gap-3 max-w-[85%] mt-4 ${isMe ? 'ml-auto flex-row-reverse' : 'mr-auto'}`;
         
         let messageContentHtml = '';
         if (msg.text.startsWith('[IMAGE]:')) {
@@ -729,19 +1003,24 @@
           const optionalText = parts.slice(1).join(' | ');
 
           messageContentHtml = `
-            <div class="space-y-1.5">
+            <div class="space-y-1.5 font-sans">
               <img src="${base64Image}" alt="Gönderilen Resim" class="rounded-xl max-w-full h-auto object-contain border border-white/5 shadow-md cursor-zoom-in" onclick="window.open('${base64Image}', '_blank')" />
-              ${optionalText ? `<p class="text-sm">${optionalText}</p>` : ''}
+              ${optionalText ? `<p class="text-sm select-text selectable">${optionalText}</p>` : ''}
             </div>
           `;
         } else {
-          messageContentHtml = `<p class="text-sm whitespace-pre-wrap">${msg.text}</p>`;
+          messageContentHtml = `<p class="text-sm whitespace-pre-wrap select-text selectable font-sans">${msg.text}</p>`;
         }
 
+        const avatarHtml = getAvatarElementHtml(msg.avatar || '🦊', "w-10 h-10 text-xl");
+
         card.innerHTML = `
-          <span class="text-[10px] text-slate-500 mb-0.5 px-1">${msg.username}</span>
-          <div class="p-3 rounded-2xl text-sm break-all ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-900 text-slate-200 rounded-tl-none'}">
-            ${messageContentHtml}
+          ${avatarHtml}
+          <div class="flex flex-col">
+            <span class="text-[10px] text-slate-500 mb-0.5 px-1">${msg.username}</span>
+            <div class="p-3 rounded-2xl text-sm break-all ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-900 text-slate-200 rounded-tl-none'}">
+              ${messageContentHtml}
+            </div>
           </div>
         `;
         messagesBox.appendChild(card);
@@ -753,17 +1032,20 @@
       usersList.innerHTML = '';
       
       const filteredUsers = activeUsers.filter(u => !u.id.startsWith('pin-'));
-      const list = filteredUsers.length > 0 ? filteredUsers : [{ id: myId, username: username }];
+      const list = filteredUsers.length > 0 ? filteredUsers : [{ id: myId, username: username, avatar: userAvatarData }];
       activeCount.innerText = list.length;
 
       list.forEach(u => {
         const item = document.createElement('div');
-        item.className = "flex items-center justify-between p-2.5 rounded-xl bg-slate-950/40 border border-slate-900 text-xs";
+        item.className = "flex items-center gap-3 p-2.5 rounded-xl bg-slate-950/40 border border-slate-900 text-xs";
+        
+        const avatarHtml = getAvatarElementHtml(u.avatar || '🦊', "w-8 h-8 text-base");
+
         item.innerHTML = `
-          <div class="flex items-center gap-2 truncate">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="font-semibold text-slate-300 truncate">${u.username}</span>
-            ${u.id === myId ? '<span class="text-[9px] text-indigo-400 bg-indigo-950 px-1.5 py-0.5 rounded font-bold">Sen</span>' : ''}
+          ${avatarHtml}
+          <div class="truncate flex-1">
+            <p class="font-semibold text-slate-300 truncate">${u.username}</p>
+            ${u.id === myId ? '<span class="text-[9px] text-indigo-400 font-bold block mt-0.5">Sen</span>' : ''}
           </div>
         `;
         usersList.appendChild(item);
@@ -771,8 +1053,11 @@
       lucide.createIcons();
     }
 
-    // ================= BİLDİRİM SİSTEMİ =================
-    btnToggleNotifications.onclick = () => {
+    // ================= BİLDİRİM SİSTEMİ (AÇ / KAPAT TOGGLE) =================
+    if (btnToggleNotifications) btnToggleNotifications.onclick = () => toggleNotificationPermission();
+    if (switchNotifications) switchNotifications.onchange = () => toggleNotificationPermission();
+
+    function toggleNotificationPermission() {
       if (!("Notification" in window)) return;
 
       if (Notification.permission === "default") {
@@ -780,23 +1065,36 @@
           if (permission === "granted") {
             setNotificationState(true);
             new Notification("MegaSohbet", { body: "Bildirimler başarıyla açıldı kanka! 🎉" });
+          } else {
+            setNotificationState(false);
           }
         });
       } else if (Notification.permission === "granted") {
-        alert("Bildirim izinleri zaten açık!");
-        setNotificationState(true);
+        setNotificationState(!isNotificationGranted);
       } else {
-        alert("Bildirim engellenmiş. Lütfen Safari/Chrome ayarlarından bildirimlere izin verin.");
+        alert("Bildirim engellenmiş. Lütfen tarayıcı ayarlarından bildirimlere elinizle izin verin.");
+        if (switchNotifications) switchNotifications.checked = false;
       }
-    };
+    }
 
     function setNotificationState(enabled) {
       isNotificationGranted = enabled;
+      if (switchNotifications) switchNotifications.checked = enabled;
+      
       if (enabled) {
-        iconBell.setAttribute('data-lucide', 'bell');
-        btnToggleNotifications.className = "p-2 text-emerald-400 hover:text-emerald-300 rounded-lg transition-colors bg-emerald-950/20 border border-emerald-900/30";
+        if (iconBell) iconBell.setAttribute('data-lucide', 'bell');
+        if (btnToggleNotifications) btnToggleNotifications.className = "p-2 text-emerald-400 hover:text-emerald-300 rounded-lg transition-colors bg-emerald-950/20 border border-emerald-900/30";
+        if (notificationStatusText) {
+          notificationStatusText.innerText = "Aktif (Arka planda bildirim gönderir)";
+          notificationStatusText.className = "text-[10px] text-emerald-400 font-semibold";
+        }
       } else {
-        iconBell.setAttribute('data-lucide', 'bell-off');
+        if (iconBell) iconBell.setAttribute('data-lucide', 'bell-off');
+        if (btnToggleNotifications) btnToggleNotifications.className = "p-2 text-rose-400 hover:text-rose-300 rounded-lg transition-colors bg-rose-950/20 border border-rose-900/30";
+        if (notificationStatusText) {
+          notificationStatusText.innerText = "Sessiz Modda (Bildirim gelmez)";
+          notificationStatusText.className = "text-[10px] text-rose-400 font-semibold";
+        }
       }
       lucide.createIcons();
     }
@@ -812,23 +1110,25 @@
     }
 
     // ================= TELEFON EKLEME / PIN KODU =================
-    btnAddPhone.onclick = async () => {
-      const pin = Math.floor(100000 + Math.random() * 900000);
-      pairPinText.innerText = `${String(pin).slice(0,3)} ${String(pin).slice(3)}`;
-      
-      const pinId = 'pin-' + pin;
-      await supabase.from('active_users').upsert({
-        id: pinId,
-        username: 'SYSTEM_PIN',
-        room: room,
-        last_active_at: Date.now() + 180000
-      });
+    if (btnAddPhone) {
+      btnAddPhone.onclick = async () => {
+        const pin = Math.floor(100000 + Math.random() * 900000);
+        pairPinText.innerText = `${String(pin).slice(0,3)} ${String(pin).slice(3)}`;
+        
+        const pinId = 'pin-' + pin;
+        await supabase.from('active_users').upsert({
+          id: pinId,
+          username: 'SYSTEM_PIN',
+          room: room,
+          last_active_at: Date.now() + 180000
+        });
 
-      pairModal.classList.remove('hidden');
-    };
+        pairModal.classList.remove('hidden');
+      };
+    }
 
-    btnClosePair.onclick = () => pairModal.classList.add('hidden');
-    btnClosePairFooter.onclick = () => pairModal.classList.add('hidden');
+    if (btnClosePair) btnClosePair.onclick = () => pairModal.classList.add('hidden');
+    if (btnClosePairFooter) btnClosePairFooter.onclick = () => pairModal.classList.add('hidden');
 
     function playNotificationSound() {
       try {
