@@ -27,17 +27,33 @@
 </head>
 <body class="h-full bg-slate-950 text-slate-100 font-sans flex flex-col overflow-hidden">
 
-  <div id="login-screen" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900 z-50">
+  <!-- ================= GİRİŞ EKRANI ================= -->
+  <div id="login-screen" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900 z-50 animate-fade-in">
     <div class="w-full max-w-md bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
+      <!-- Dekoratif Işıklar -->
+      <div class="absolute top-0 left-1/4 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute bottom-0 right-1/4 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
       <div class="text-center mb-6">
         <span class="inline-block p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 mb-3 border border-indigo-500/20">
           <i data-lucide="sparkles" class="w-8 h-8 animate-pulse"></i>
         </span>
-        <h2 class="text-2xl font-bold text-white tracking-tight">Sohbete Katılın</h2>
-        <p class="text-slate-400 text-sm mt-1">Kendinize bir takma ad ve şirin bir avatar seçin.</p>
+        <h2 class="text-2xl font-bold text-white tracking-tight">MegaSohbet'e Katılın</h2>
+        <p class="text-slate-400 text-sm mt-1">Bir oda seçin, takma adınızı girin ve sohbete başlayın.</p>
       </div>
 
-      <form id="login-form" class="space-y-6">
+      <form id="login-form" class="space-y-4">
+        <!-- Oda Kodu Girişi (Cihazları Eşitleyen En Önemli Kısım) -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-2">Sohbet Oda Kodu (Şifre Gibi Düşün)</label>
+          <div class="relative">
+            <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500 w-5 h-5"></i>
+            <input type="text" id="room-input" maxlength="15" placeholder="Örn: kankalar-odasi" class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-indigo-900/40 focus:border-indigo-500 rounded-xl outline-none text-slate-100 font-bold transition-all focus:ring-2 focus:ring-indigo-500/20" required />
+          </div>
+          <p class="text-[10px] text-slate-500 mt-1">Diğer telefonlarla aynı odaya girmek için bu kodu birebir aynı yazın kanka.</p>
+        </div>
+
+        <!-- Kullanıcı Adı Girdisi -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Kullanıcı Adı / Rumuz</label>
           <div class="relative">
@@ -46,30 +62,33 @@
           </div>
         </div>
 
+        <!-- Avatar Seçimi -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Avatarını Seç</label>
-          <div id="avatar-grid" class="grid grid-cols-4 gap-3"></div>
+          <div id="avatar-grid" class="grid grid-cols-6 gap-2"></div>
         </div>
 
+        <!-- Konum ve IP Bilgisi -->
         <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
           <div class="flex items-center gap-2">
             <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
-            <span>Konum: <strong id="geo-city" class="text-slate-200">Yükleniyor...</strong></span>
+            <span>Konum: <strong id="geo-city" class="text-slate-200">Konya</strong></span>
           </div>
           <div class="flex items-center gap-2">
             <i data-lucide="globe" class="w-4 h-4 text-indigo-400"></i>
-            <span>Güvenli IP: <strong id="geo-ip" class="text-slate-200">xx.xx.xx.xx</strong></span>
+            <span>Güvenli IP: <strong id="geo-ip" class="text-slate-200">176.40.xx.xx</strong></span>
           </div>
         </div>
 
         <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
           Giriş Yap ve Sohbet et
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
       </form>
     </div>
   </div>
 
+  <!-- ================= ANA SOHBET EKRANI ================= -->
   <div id="app-screen" class="hidden flex-1 flex flex-col overflow-hidden">
     <header class="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 shadow-md z-10">
       <div class="flex items-center gap-3">
@@ -81,10 +100,10 @@
           <div class="flex items-center gap-2 mt-0.5">
             <p class="text-xs text-indigo-400 flex items-center gap-1 leading-none">
               <i data-lucide="circle" class="w-2 h-2 fill-emerald-500 text-emerald-500 animate-pulse"></i>
-              <span id="active-count">0</span> kişi aktif
+              <span id="active-count">1</span> aktif
             </p>
-            <span id="connection-badge" class="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-900/50 leading-none">
-              Bağlantı Kontrol Ediliyor...
+            <span id="connection-badge" class="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700 leading-none">
+              Kontrol Ediliyor...
             </span>
           </div>
         </div>
@@ -93,7 +112,7 @@
       <div class="flex items-center gap-2 md:gap-4">
         <button id="btn-qr" class="flex items-center gap-2 px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 rounded-lg text-sm transition-all shadow-inner">
           <i data-lucide="qr-code" class="w-4 h-4 text-indigo-400"></i>
-          <span class="hidden sm:inline font-medium">Odayı Paylaş / QR</span>
+          <span class="hidden sm:inline font-medium">Oda Davet Kodu / QR</span>
         </button>
         <button id="btn-sound" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
           <i data-lucide="volume-2" id="sound-icon" class="w-5 h-5"></i>
@@ -110,23 +129,24 @@
         </div>
         <button id="btn-logout" class="flex items-center gap-2 px-3 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent rounded-lg transition-all">
           <i data-lucide="log-out" class="w-4 h-4"></i>
-          <span class="hidden md:inline">Değiştir</span>
+          <span class="hidden md:inline">Çıkış Yap</span>
         </button>
       </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden relative">
+      <!-- Sol Sidebar -->
       <aside id="user-sidebar" class="w-80 bg-slate-900/60 border-r border-slate-800 flex flex-col transition-all z-20 hidden md:flex absolute inset-y-0 left-0 w-full md:relative md:w-80 bg-slate-950 md:bg-slate-900/60">
         <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
           <div class="flex items-center gap-2 text-indigo-400">
             <i data-lucide="hash" class="w-5 h-5"></i>
-            <span class="font-bold text-slate-200">genel-sohbet</span>
+            <span id="sidebar-room-name" class="font-bold text-slate-200">oda-adi</span>
           </div>
           <button id="btn-close-sidebar" class="md:hidden text-xs text-indigo-400 font-semibold px-2 py-1 bg-slate-800 rounded">Kapat</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
           <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <span>Aktif Kullanıcılar (<span id="sidebar-user-count">0</span>)</span>
+            <span>Bu Odadaki Aktif Kişiler (<span id="sidebar-user-count">1</span>)</span>
             <i data-lucide="circle" class="w-2.5 h-2.5 fill-emerald-500 text-emerald-500 animate-ping"></i>
           </div>
           <div id="online-users-list" class="space-y-2"></div>
@@ -136,14 +156,28 @@
             <i data-lucide="globe" class="w-3.5 h-3.5"></i> Bağlantın Güvende:
           </p>
           <p class="text-[11px] leading-relaxed">
-            Konumun <strong id="sidebar-geo-city" class="text-slate-300">Yükleniyor...</strong>, IP adresin <strong id="sidebar-geo-ip" class="text-slate-300">xx.xx.xx.xx</strong> olarak maskelenerek paylaşıldı.
+            Konumun <strong id="sidebar-geo-city" class="text-slate-300">Yükleniyor...</strong>, IP adresin <strong id="sidebar-geo-ip" class="text-slate-300">xx.xx.xx.xx</strong> olarak maskelendi.
           </p>
         </div>
       </aside>
 
+      <!-- Orta Sohbet Akışı -->
       <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden relative">
+        <!-- Hata Bildirimi -->
+        <div id="db-error-alert" class="hidden p-3 bg-red-950/80 border-b border-red-900/50 text-xs text-red-200 flex items-start justify-between gap-3">
+          <div class="flex items-start gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-red-400 shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-bold">Bağlantı Hatası Detayı:</p>
+              <p id="db-error-message" class="font-mono mt-0.5 opacity-90"></p>
+            </div>
+          </div>
+          <button id="btn-retry-conn" class="bg-red-900/60 hover:bg-red-800 text-white font-semibold px-2 py-1 rounded text-[10px] transition-colors">Tekrar Dene</button>
+        </div>
+
         <div id="messages-container" class="flex-1 overflow-y-auto px-4 py-6 md:p-6 space-y-4 custom-scrollbar"></div>
 
+        <!-- Emojiler ve Hazır Kelimeler -->
         <div class="px-4 pt-2 border-t border-slate-900 bg-slate-900/20">
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
             <span class="text-xs text-slate-500 font-semibold mr-1 shrink-0">Hızlı Tepki:</span>
@@ -155,6 +189,7 @@
           </div>
         </div>
 
+        <!-- Yazma Alanı Formu -->
         <form id="message-form" class="p-4 bg-slate-900 border-t border-slate-800 flex items-center gap-3 relative">
           <button type="button" id="btn-emoji-trigger" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
             <i data-lucide="smile" class="w-6 h-6"></i>
@@ -172,17 +207,18 @@
     </div>
   </div>
 
+  <!-- QR Davet Modalı -->
   <div id="qr-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
       <button id="btn-close-qr" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
       <div class="text-center space-y-4">
         <div class="inline-block p-3 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20"><i data-lucide="qr-code" class="w-8 h-8"></i></div>
         <div>
-          <h3 class="font-bold text-lg text-white">Odaya Arkadaşlarını Çağır</h3>
-          <p class="text-xs text-slate-400 mt-1">Telefonunla taratıp odaya girmek veya arkadaşlarınla paylaşmak için bu QR kodu kullanabilirsin!</p>
+          <h3 class="font-bold text-lg text-white">Bu Odaya Arkadaşlarını Davet Et</h3>
+          <p class="text-xs text-slate-400 mt-1">Sohbetin telefonlar arasında akması için diğer telefonlardan bu QR kodu taratmanız yeterlidir!</p>
         </div>
         <div class="space-y-2 text-left bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-          <label class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="link-2" class="w-3.5 h-3.5"></i> Paylaşım Linki</label>
+          <label class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="link-2" class="w-3.5 h-3.5"></i> Bu Odanın Giriş Linki</label>
           <input type="text" id="share-link-input" class="w-full text-xs bg-slate-900 text-slate-200 border border-slate-800 rounded-lg p-2 outline-none" readonly />
         </div>
         <div class="bg-white p-4 rounded-xl inline-block shadow-inner">
@@ -196,6 +232,7 @@
     </div>
   </div>
 
+  <!-- SUPABASE VE SİSTEM MANTIĞI -->
   <script type="module">
     const supabaseUrl = 'https://qbkhunjqfpnbseqynajy.supabase.co';
     const supabaseKey = 'sb_publishable_5LGlnkTYHc7ju-SLM29Xyw_nlnm73Rs';
@@ -214,6 +251,7 @@
     let onlineUsers = [];
     let geoInfo = { city: 'Konya', ip: '176.40.xx.xx' };
     let useLocalFallback = false;
+    let currentRoom = 'genel-sohbet'; // Varsayılan Oda Kodu
 
     let messagePollingInterval = null;
     let presencePollingInterval = null;
@@ -233,11 +271,12 @@
 
     currentSelectedAvatar = AVATAR_OPTIONS[0];
 
-    // Elementler
+    // Elementleri yakalama
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username-input');
+    const roomInput = document.getElementById('room-input');
     const avatarGrid = document.getElementById('avatar-grid');
     const geoCityText = document.getElementById('geo-city');
     const geoIpText = document.getElementById('geo-ip');
@@ -250,12 +289,16 @@
     const headerUsername = document.getElementById('header-username');
     const sidebarGeoCity = document.getElementById('sidebar-geo-city');
     const sidebarGeoIp = document.getElementById('sidebar-geo-ip');
+    const sidebarRoomName = document.getElementById('sidebar-room-name');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     const quickEmojisContainer = document.getElementById('quick-emojis-container');
     const presetsContainer = document.getElementById('presets-container');
     const emojiPickerGrid = document.getElementById('emoji-picker-grid');
     const emojiPicker = document.getElementById('emoji-picker');
+    const dbErrorAlert = document.getElementById('db-error-alert');
+    const dbErrorMessage = document.getElementById('db-error-message');
+    const btnRetryConn = document.getElementById('btn-retry-conn');
 
     window.addEventListener('load', () => {
       buildAvatarGrid();
@@ -282,11 +325,21 @@
       sidebarGeoIp.innerText = geoInfo.ip;
     }
 
+    // QR Kodunu Güncelleyen Fonksiyon
+    function updateQrCode(link) {
+      document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=4f46e5&data=${encodeURIComponent(link)}`;
+    }
+
     function initShareUrl() {
       let currentUrl = window.location.href;
-      if (currentUrl.includes('about:') || currentUrl.includes('srcdoc')) currentUrl = 'https://mevcut-site-adresiniz.com';
-      document.getElementById('share-link-input').value = currentUrl;
-      document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=4f46e5&data=${encodeURIComponent(currentUrl)}`;
+      // Güvenli dinamik url eşleme
+      if (currentUrl.includes('about:') || currentUrl.includes('srcdoc')) {
+        currentUrl = 'https://mevcut-site-adresiniz.com'; 
+      }
+      // Url'in sonuna oda parametresi ekleyelim ki telefon taratınca direkt bu odaya girsin!
+      const finalShareUrl = `${currentUrl}?room=${encodeURIComponent(currentRoom)}`;
+      document.getElementById('share-link-input').value = finalShareUrl;
+      updateQrCode(finalShareUrl);
     }
 
     function buildAvatarGrid() {
@@ -294,8 +347,8 @@
       AVATAR_OPTIONS.forEach((avatar) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${avatar.color} ${currentSelectedAvatar.id === avatar.id ? 'ring-4 ring-white scale-105' : 'opacity-70'}`;
-        btn.innerHTML = `<span class="text-2xl">${avatar.id}</span><span class="text-[10px] text-white font-medium">${avatar.label}</span>`;
+        btn.className = `py-2 px-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${avatar.color} ${currentSelectedAvatar.id === avatar.id ? 'ring-4 ring-white scale-105' : 'opacity-70'}`;
+        btn.innerHTML = `<span class="text-xl">${avatar.id}</span><span class="text-[9px] text-white font-medium">${avatar.label}</span>`;
         btn.onclick = () => { currentSelectedAvatar = avatar; buildAvatarGrid(); };
         avatarGrid.appendChild(btn);
       });
@@ -339,6 +392,16 @@
     emojiPicker.onclick = (e) => e.stopPropagation();
 
     function initAuth() {
+      // URL'de bir oda daveti var mı kontrol et
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get('room');
+      if (roomParam) {
+        currentRoom = roomParam;
+        roomInput.value = roomParam;
+      } else {
+        roomInput.value = currentRoom;
+      }
+
       const savedName = localStorage.getItem('chat_username');
       if (savedName) {
         currentUsername = savedName;
@@ -350,8 +413,11 @@
     loginForm.onsubmit = (e) => {
       e.preventDefault();
       const val = usernameInput.value.trim();
-      if (!val) return;
+      const roomVal = roomInput.value.trim();
+      if (!val || !roomVal) return;
+      
       currentUsername = val;
+      currentRoom = roomVal;
       localStorage.setItem('chat_username', val);
       isRegistered = true;
       setupChatMode();
@@ -368,37 +434,84 @@
       headerAvatar.innerText = currentSelectedAvatar.id;
       headerAvatar.className = `w-8 h-8 rounded-full flex items-center justify-center text-lg ${currentSelectedAvatar.color}`;
       headerUsername.innerText = currentUsername;
+      sidebarRoomName.innerText = currentRoom;
 
+      // Oda linkini tekrar güncelle
+      initShareUrl();
+      startPolling();
+    }
+
+    function startPolling() {
+      runUpdates();
+
+      if (messagePollingInterval) clearInterval(messagePollingInterval);
+      messagePollingInterval = setInterval(fetchMessages, 3000);
+
+      if (presencePollingInterval) clearInterval(presencePollingInterval);
+      presencePollingInterval = setInterval(() => {
+        updatePresence();
+        fetchOnlineUsers();
+      }, 7000);
+    }
+
+    function runUpdates() {
       fetchMessages();
       updatePresence();
       fetchOnlineUsers();
-
-      messagePollingInterval = setInterval(fetchMessages, 2500);
-      presencePollingInterval = setInterval(() => { updatePresence(); fetchOnlineUsers(); }, 6000);
     }
 
+    btnRetryConn.onclick = () => {
+      useLocalFallback = false;
+      dbErrorAlert.classList.add('hidden');
+      connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700 leading-none";
+      connectionBadge.innerText = "Yeniden Bağlanılıyor...";
+      runUpdates();
+    };
+
+    // --- 1. HTTP Mesaj Çekme (Odaya Göre Filtrelenmiş) ---
     async function fetchMessages() {
-      if (useLocalFallback) return;
-      const { data, error } = await _supabase.from('messages').select('*').order('timestamp', { ascending: true }).limit(100);
+      // Supabase'den sadece bu odaya (room sütununa) ait veya genel mesajları çekelim
+      // (Eski tabloda room sütunu olmayabileceği için hata vermemesi için her şeyi çekip JS ile süzebiliriz)
+      const { data, error } = await _supabase
+        .from('messages')
+        .select('*')
+        .order('timestamp', { ascending: true })
+        .limit(150);
       
       if (error) {
-        console.log("Veritabanı kontrol ediliyor...");
+        dbErrorMessage.innerText = error.message;
+        dbErrorAlert.classList.remove('hidden');
         activateLocalFallback();
         return;
       }
 
-      useLocalFallback = false;
+      dbErrorAlert.classList.add('hidden');
+      if (useLocalFallback) {
+        useLocalFallback = false;
+        messages = [];
+      }
+
       connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-900/50 leading-none";
       connectionBadge.innerText = "Supabase Canlı Bağlantı (REST)";
 
-      messages = data || [];
+      // Eğer SQL tablosunda 'room' kolonu eklenmişse filtrele, yoksa tümünü göster (çökmeyi önler)
+      const incomingMessages = data ? data.filter(m => !m.room || m.room === currentRoom) : [];
+
+      if (incomingMessages.length > messages.length && messages.length > 0) {
+        const lastMsg = incomingMessages[incomingMessages.length - 1];
+        if (lastMsg.username !== currentUsername) {
+          playNotificationSound();
+        }
+      }
+
+      messages = incomingMessages;
       renderMessages();
     }
 
     function renderMessages() {
       messagesContainer.innerHTML = '';
       if (messages.length === 0) {
-        messagesContainer.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-500"><p class="font-medium">Henüz hiç mesaj yok. Muhabbeti başlat!</p></div>`;
+        messagesContainer.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-500"><p class="font-medium">Bu odada henüz hiç mesaj yok. İlk yazan sen ol kanka! 👋</p></div>`;
         return;
       }
       messages.forEach((msg) => {
@@ -426,20 +539,38 @@
       lucide.createIcons();
     }
 
+    // --- 2. Varlık Takibi (Odaya Göre) ---
     async function updatePresence() {
       if (!isRegistered || useLocalFallback) return;
+      
+      // Upsert işlemi ile aktif odayı ve durumumuzu veritabanına yazalım
       await _supabase.from('active_users').upsert({
-        id: myUserId, username: currentUsername, avatar: currentSelectedAvatar.id,
-        avatar_color: currentSelectedAvatar.color, city: geoInfo.city, ip: geoInfo.ip, last_active_at: Date.now()
+        id: myUserId, 
+        username: currentUsername, 
+        avatar: currentSelectedAvatar.id,
+        avatar_color: currentSelectedAvatar.color, 
+        city: geoInfo.city, 
+        ip: geoInfo.ip, 
+        last_active_at: Date.now(),
+        room: currentRoom // Kullanıcının o an bulunduğu oda bilgisi
       });
     }
 
     async function fetchOnlineUsers() {
       if (useLocalFallback) return;
       const activeThreshold = Date.now() - 20000;
-      const { data } = await _supabase.from('active_users').select('*').gt('last_active_at', activeThreshold);
-      onlineUsers = data || [];
-      renderOnlineUsers();
+      
+      // Sadece aynı odada aktif olan kullanıcıları çekelim
+      const { data, error } = await _supabase
+        .from('active_users')
+        .select('*')
+        .gt('last_active_at', activeThreshold);
+      
+      if (!error && data) {
+        // Javascript ile aynı odada olanları filtreleyelim (schema cache sorunlarından kaçınmak için)
+        onlineUsers = data.filter(u => !u.room || u.room === currentRoom);
+        renderOnlineUsers();
+      }
     }
 
     function renderOnlineUsers() {
@@ -474,19 +605,29 @@
 
     async function sendDirectMessage(text) {
       if (useLocalFallback) {
-        messages.push({ id: Date.now(), text, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, timestamp: Date.now() });
+        messages.push({ id: Date.now(), text, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, timestamp: Date.now(), room: currentRoom });
         renderMessages();
         return;
       }
-      await _supabase.from('messages').insert([{ text, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, timestamp: Date.now() }]);
+      
+      // Mesajı odayla birlikte kaydedelim
+      await _supabase.from('messages').insert([{ 
+        text, 
+        username: currentUsername, 
+        avatar: currentSelectedAvatar.id, 
+        avatar_color: currentSelectedAvatar.color, 
+        city: geoInfo.city, 
+        timestamp: Date.now(),
+        room: currentRoom // Hangi odaya gönderildiği bilgisi
+      }]);
       fetchMessages();
     }
 
     function activateLocalFallback() {
       if (useLocalFallback) return;
       useLocalFallback = true;
-      connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-amber-950 text-amber-300 border border-amber-900/50 leading-none";
-      connectionBadge.innerText = "Yerel Simülasyon Odası (Veritabanı Bekleniyor)";
+      connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-amber-950 text-amber-300 border border-amber-900/50 leading-none animate-pulse";
+      connectionBadge.innerText = "Yerel Simülasyon Odası (Canlı Bağlantı Bekleniyor)";
       renderOnlineUsers();
     }
 
