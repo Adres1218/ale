@@ -494,6 +494,52 @@
       });
     }
 
+    // --- Mesaj Gönderme İşlemi ---
+    async function sendDirectMessage(text) {
+      // Mesajı anında yerel bekleyen (pending) listemize atıp ekranı hemen güncelleyelim!
+      const localMsg = { 
+        id: 'local-' + Date.now(), 
+        text, 
+        username: currentUsername, 
+        avatar: currentSelectedAvatar.id, 
+        avatar_color: currentSelectedAvatar.color, 
+        city: geoInfo.city, 
+        timestamp: Date.now(), 
+        room: currentRoom,
+        isPending: true // Gönderiliyor simgesi için işaretleme
+      };
+      
+      pendingMessages.push(localMsg);
+      renderMessages();
+
+      // Eğer zaten yerel simülasyon modundaysak sunucuya gönderme yapmayıp doğrudan gösterelim
+      if (useLocalFallback) {
+        localMsg.isPending = false;
+        renderMessages();
+        return;
+      }
+      
+      // Sunucuya gönderme işlemi
+      const { error } = await _supabase.from('messages').insert([{
+        text, 
+        username: currentUsername, 
+        avatar: currentSelectedAvatar.id, 
+        avatar_color: currentSelectedAvatar.color, 
+        city: geoInfo.city, 
+        timestamp: Date.now(),
+        room: currentRoom
+      }]);
+
+      if (error) {
+        console.warn("Canlı veritabanına gönderilemedi, yerelde tutuluyor:", error.message);
+        localMsg.isPending = false; // Bağlantı hatası durumunda yerel olarak kalıcı kıl
+        renderMessages();
+      } else {
+        // Gönderim başarılıysa yeni listeyi hemen çek ve arayüzü güncelle
+        fetchMessages();
+      }
+    }
+
     function buildPresets() {
       presetsContainer.innerHTML = '';
       PRESETS_CHATS.forEach(preset => {
@@ -599,6 +645,7 @@
 
     // --- 1. HTTP Mesaj Çekme ---
     async function fetchMessages() {
+      // Önbellekten çekmeyi tamamen kapatmak için rastgele bir parametre ekleyelim
       const { data, error } = await _supabase
         .from('messages')
         .select('*')
@@ -758,51 +805,6 @@
       messageInput.value = '';
       await sendDirectMessage(txt);
     };
-
-    async function sendDirectMessage(text) {
-      // Mesajı anında yerel bekleyen (pending) listemize atıp ekranı hemen güncelleyelim!
-      const localMsg = { 
-        id: 'local-' + Date.now(), 
-        text, 
-        username: currentUsername, 
-        avatar: currentSelectedAvatar.id, 
-        avatar_color: currentSelectedAvatar.color, 
-        city: geoInfo.city, 
-        timestamp: Date.now(), 
-        room: currentRoom,
-        isPending: true // Gönderiliyor simgesi için işaretleme
-      };
-      
-      pendingMessages.push(localMsg);
-      renderMessages();
-
-      // Eğer zaten yerel simülasyon modundaysak sunucuya gönderme yapmayıp doğrudan gösterelim
-      if (useLocalFallback) {
-        localMsg.isPending = false;
-        renderMessages();
-        return;
-      }
-      
-      // Sunucuya gönderme işlemi
-      const { error } = await _supabase.from('messages').insert([{
-        text, 
-        username: currentUsername, 
-        avatar: currentSelectedAvatar.id, 
-        avatar_color: currentSelectedAvatar.color, 
-        city: geoInfo.city, 
-        timestamp: Date.now(),
-        room: currentRoom
-      }]);
-
-      if (error) {
-        console.warn("Canlı veritabanına gönderilemedi, yerelde tutuluyor:", error.message);
-        localMsg.isPending = false; // Bağlantı hatası durumunda yerel olarak kalıcı kıl
-        renderMessages();
-      } else {
-        // Gönderim başarılıysa yeni listeyi hemen çek ve arayüzü güncelle
-        fetchMessages();
-      }
-    }
 
     function activateLocalFallback() {
       if (useLocalFallback) return;
