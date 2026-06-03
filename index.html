@@ -38,7 +38,7 @@
       background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(99, 102, 241, 0.2);
+      background: rgba(99, 102, 241, 0.25);
       border-radius: 99px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -53,13 +53,13 @@
     }
     /* Cam efekti (Glassmorphism) */
     .glass-panel {
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .glass-input {
       background: rgba(3, 7, 18, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .glass-input:focus {
       border-color: rgba(99, 102, 241, 0.6);
@@ -93,7 +93,7 @@
       <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
 
       <div class="text-center mb-8">
-        <span class="inline-flex p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 mb-3 border border-indigo-500/20">
+        <span class="inline-block p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 mb-3 border border-indigo-500/20">
           <i data-lucide="sparkles" class="w-8 h-8 animate-pulse"></i>
         </span>
         <h2 class="text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
@@ -295,7 +295,7 @@
             type="text" 
             id="message-input" 
             placeholder="Mesajınızı buraya yazın..." 
-            class="flex-1 py-3.5 px-4 glass-input rounded-xl outline-none text-slate-100 placeholder-slate-500 text-sm transition-all" 
+            class="glass-input flex-1 py-3.5 px-4 rounded-xl outline-none text-slate-100 placeholder-slate-500 text-sm transition-all" 
             required 
             autocomplete="off"
           />
@@ -336,7 +336,7 @@
           <img id="qr-image" src="" alt="QR" class="w-44 h-44" />
         </div>
         
-        <button id="btn-copy-link" class="w-full py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-700 transition-colors">
+        <button id="btn-copy-link" class="w-full py-3 bg-slate-800 hover:bg-slate-755 text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-700 transition-colors">
           <i data-lucide="copy" id="copy-icon" class="w-4 h-4 text-slate-400"></i>
           <span id="copy-text">Linki Kopyala</span>
         </button>
@@ -361,7 +361,8 @@
     let currentSelectedAvatar = null;
     let isRegistered = false;
     let soundEnabled = true;
-    let messages = [];
+    let messages = []; // Sunucudan gelen kesinleşmiş mesajlar
+    let pendingMessages = []; // Henüz sunucuya ulaşmamış, yerel olarak bekletilen mesajlar
     let onlineUsers = [];
     let geoInfo = { city: 'Konya', ip: '176.40.xx.xx' };
     let useLocalFallback = false;
@@ -482,6 +483,7 @@
     }
 
     function buildQuickEmojis() {
+      quickEmojisContainer.innerHTML = '';
       QUICK_EMOJIS.forEach(emoji => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -493,6 +495,7 @@
     }
 
     function buildPresets() {
+      presetsContainer.innerHTML = '';
       PRESETS_CHATS.forEach(preset => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -504,6 +507,7 @@
     }
 
     function buildEmojiPicker() {
+      emojiPickerGrid.innerHTML = '';
       ALL_EMOJIS.forEach(emo => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -609,10 +613,7 @@
       }
 
       dbErrorAlert.classList.add('hidden');
-      if (useLocalFallback) {
-        useLocalFallback = false;
-        messages = [];
-      }
+      useLocalFallback = false;
 
       connectionBadge.className = "text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-300 border border-emerald-900/50 leading-none";
       connectionBadge.innerText = "Supabase Canlı Bağlantı";
@@ -624,6 +625,7 @@
         });
       }
 
+      // Supabase'den gelen yeni mesajlar varsa sesi oynat
       if (incomingMessages.length > messages.length && messages.length > 0) {
         const lastMsg = incomingMessages[incomingMessages.length - 1];
         if (lastMsg.username !== currentUsername) {
@@ -632,22 +634,41 @@
       }
 
       messages = incomingMessages;
+      
+      // Gönderilmiş ama veritabanında henüz listelenmemiş yerel mesajlarımızı koru
+      // Supabase'de aynı kullanıcı adı, metin ve yakın zaman damgasına sahip bir kayıt varsa yerel mesajı sileriz
+      pendingMessages = pendingMessages.filter(local => {
+        return !messages.some(remote => 
+          remote.username === local.username && 
+          remote.text === local.text &&
+          Math.abs(remote.timestamp - local.timestamp) < 15000
+        );
+      });
+
       renderMessages();
     }
 
     function renderMessages() {
       messagesContainer.innerHTML = '';
-      if (messages.length === 0) {
+      
+      // Hem sunucudan gelen hem de yerel bekleyen mesajları birleştir
+      const allMessages = [...messages, ...pendingMessages].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+      if (allMessages.length === 0) {
         messagesContainer.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-500 gap-2"><i data-lucide="message-square-plus" class="w-10 h-10 text-indigo-500/40"></i><p class="font-bold text-sm">Bu oda şu an bomboş!</p><p class="text-xs text-slate-500">İlk mesajı yazıp odayı canlandır kanka.</p></div>`;
         lucide.createIcons();
         return;
       }
-      messages.forEach((msg) => {
+
+      allMessages.forEach((msg) => {
         const isMe = msg.username === currentUsername;
         const msgDiv = document.createElement('div');
         msgDiv.className = `flex gap-3 max-w-[85%] mt-4 ${isMe ? 'ml-auto flex-row-reverse' : 'mr-auto'}`;
         const dateStr = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
+        // Eğer mesaj henüz onaylanmadıysa sağ köşede ufak bir saat simgesi göster
+        const statusHtml = msg.isPending ? `<span class="text-[9px] text-amber-500 italic ml-1">Gönderiliyor...</span>` : '';
+
         msgDiv.innerHTML = `
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${msg.avatar_color || 'bg-indigo-600'} shadow-md border border-white/5">${msg.avatar || '🦊'}</div>
           <div class="flex flex-col">
@@ -655,9 +676,9 @@
               <span class="text-xs text-slate-300 font-bold">${msg.username}</span>
               <span class="text-[10px] text-slate-500 bg-slate-900/60 px-1.5 py-0.5 rounded-md border border-slate-800/40">${msg.city || 'Konya'}</span>
             </div>
-            <div class="p-3.5 rounded-2xl shadow-lg break-words border ${isMe ? 'bg-indigo-600 border-indigo-500 text-white rounded-tr-none' : 'bg-slate-900 border-slate-850 text-slate-100 rounded-tl-none'}">
+            <div class="p-3.5 rounded-2xl shadow-lg break-words border ${isMe ? 'bg-indigo-600 border-indigo-500 text-white rounded-tr-none' : 'bg-slate-900 border-slate-850 text-slate-100 rounded-tl-none'} ${msg.isPending ? 'opacity-70' : ''}">
               <p class="text-[13px] leading-relaxed whitespace-pre-wrap">${msg.text}</p>
-              <span class="block text-[9px] mt-1.5 text-slate-400 text-right opacity-80">${dateStr}</span>
+              <span class="block text-[9px] mt-1.5 text-slate-400 text-right opacity-80">${dateStr}${statusHtml}</span>
             </div>
           </div>
         `;
@@ -686,7 +707,11 @@
     }
 
     async function fetchOnlineUsers() {
-      if (useLocalFallback) return;
+      if (useLocalFallback) {
+        renderOnlineUsers();
+        return;
+      }
+      
       const activeThreshold = Date.now() - 15000; // Son 15 saniyede aktif olanlar
       
       const { data, error } = await _supabase
@@ -702,10 +727,11 @@
 
     function renderOnlineUsers() {
       onlineUsersList.innerHTML = '';
-      activeCountText.innerText = onlineUsers.length || 1;
-      sidebarUserCount.innerText = onlineUsers.length || 1;
       
-      const list = onlineUsers.length > 0 ? onlineUsers : [{ id: myUserId, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, ip: geoInfo.ip }];
+      const list = (onlineUsers.length > 0) ? onlineUsers : [{ id: myUserId, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, ip: geoInfo.ip }];
+      
+      activeCountText.innerText = list.length;
+      sidebarUserCount.innerText = list.length;
       
       list.forEach((user) => {
         const item = document.createElement('div');
@@ -734,28 +760,48 @@
     };
 
     async function sendDirectMessage(text) {
-      if (useLocalFallback) {
-        messages.push({ id: Date.now(), text, username: currentUsername, avatar: currentSelectedAvatar.id, avatar_color: currentSelectedAvatar.color, city: geoInfo.city, timestamp: Date.now(), room: currentRoom });
-        renderMessages();
-        return;
-      }
-      
-      const insertData = { 
+      // Mesajı anında yerel bekleyen (pending) listemize atıp ekranı hemen güncelleyelim!
+      const localMsg = { 
+        id: 'local-' + Date.now(), 
         text, 
         username: currentUsername, 
         avatar: currentSelectedAvatar.id, 
         avatar_color: currentSelectedAvatar.color, 
         city: geoInfo.city, 
-        timestamp: Date.now()
+        timestamp: Date.now(), 
+        room: currentRoom,
+        isPending: true // Gönderiliyor simgesi için işaretleme
       };
+      
+      pendingMessages.push(localMsg);
+      renderMessages();
 
-      insertData.room = currentRoom;
-
-      const { error } = await _supabase.from('messages').insert([insertData]);
-      if (error) {
-        console.warn("Mesaj gönderilemedi:", error.message);
+      // Eğer zaten yerel simülasyon modundaysak sunucuya gönderme yapmayıp doğrudan gösterelim
+      if (useLocalFallback) {
+        localMsg.isPending = false;
+        renderMessages();
+        return;
       }
-      fetchMessages();
+      
+      // Sunucuya gönderme işlemi
+      const { error } = await _supabase.from('messages').insert([{
+        text, 
+        username: currentUsername, 
+        avatar: currentSelectedAvatar.id, 
+        avatar_color: currentSelectedAvatar.color, 
+        city: geoInfo.city, 
+        timestamp: Date.now(),
+        room: currentRoom
+      }]);
+
+      if (error) {
+        console.warn("Canlı veritabanına gönderilemedi, yerelde tutuluyor:", error.message);
+        localMsg.isPending = false; // Bağlantı hatası durumunda yerel olarak kalıcı kıl
+        renderMessages();
+      } else {
+        // Gönderim başarılıysa yeni listeyi hemen çek ve arayüzü güncelle
+        fetchMessages();
+      }
     }
 
     function activateLocalFallback() {
@@ -765,22 +811,6 @@
       connectionBadge.innerText = "Yerel Simülasyon Odası (Canlı Bağlantı Bekleniyor)";
       renderOnlineUsers();
     }
-
-    document.getElementById('btn-sound').onclick = () => {
-      soundEnabled = !soundEnabled;
-      document.getElementById('sound-icon').setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
-      lucide.createIcons();
-    };
-    document.getElementById('btn-mobile-users').onclick = () => document.getElementById('user-sidebar').classList.remove('hidden');
-    document.getElementById('btn-close-sidebar').onclick = () => document.getElementById('user-sidebar').classList.add('hidden');
-    document.getElementById('btn-qr').onclick = () => document.getElementById('qr-modal').classList.remove('hidden');
-    document.getElementById('btn-close-qr').onclick = () => document.getElementById('qr-modal').classList.add('hidden');
-    
-    document.getElementById('btn-copy-link').onclick = () => {
-      navigator.clipboard.writeText(document.getElementById('share-link-input').value);
-      document.getElementById('copy-text').innerText = "Kopyalandı!";
-      setTimeout(() => { document.getElementById('copy-text').innerText = "Linki Kopyala"; }, 2000);
-    };
   </script>
 </body>
 </html>
